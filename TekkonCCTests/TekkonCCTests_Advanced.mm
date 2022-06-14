@@ -76,9 +76,9 @@ using namespace Tekkon;
   XCTAssertEqual(composer.cnvSequence("qqiir"), "ㄅㄞˇ");
 }
 
-- (void)test_Zhuyin_Eten26Keys {
-  // Testing handleEten26();
-  Composer composer = Composer("", ofEten26);
+- (void)test_Zhuyin_ETen26Keys {
+  // Testing handleETen26();
+  Composer composer = Composer("", ofETen26);
   XCTAssertEqual(composer.cnvSequence("ket"), "ㄎㄧㄤ");
   // AreEqual(Composer.cnvSequence("vezf"), "ㄍㄧㄠˊ");
   // AreEqual(Composer.cnvSequence("ven"), "ㄍㄧㄣ");

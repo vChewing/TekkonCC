@@ -130,8 +130,8 @@ enum PhoneType : int {
 enum MandarinParser : int {
   ofDachen = 0,
   ofDachen26 = 1,
-  ofEten = 2,
-  ofEten26 = 3,
+  ofETen = 2,
+  ofETen26 = 3,
   ofHsu = 4,
   ofIBM = 5,
   ofMiTAC = 6,
@@ -1168,7 +1168,7 @@ inline static std::map<std::string, std::string> mapHsuStaticKeys = {
 /// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
 /// 這裡提前對ㄓ/ㄍ/ㄕ做處理，然後再用程式判斷介母類型、
 /// 據此判斷是否需要換成ㄒ/ㄑ/ㄐ。
-inline static std::map<std::string, std::string> mapEten26StaticKeys = {
+inline static std::map<std::string, std::string> mapETen26StaticKeys = {
     {"a", "ㄚ"}, {"b", "ㄅ"}, {"c", "ㄕ"}, {"d", "ㄉ"}, {"e", "ㄧ"},
     {"f", "ㄈ"}, {"g", "ㄓ"}, {"h", "ㄏ"}, {"i", "ㄞ"}, {"j", "ㄖ"},
     {"k", "ㄎ"}, {"l", "ㄌ"}, {"m", "ㄇ"}, {"n", "ㄋ"}, {"o", "ㄛ"},
@@ -1177,7 +1177,7 @@ inline static std::map<std::string, std::string> mapEten26StaticKeys = {
     {"z", "ㄠ"}, {" ", " "}};
 
 /// 倚天傳統排列專用處理陣列。
-inline static std::map<std::string, std::string> mapQwertyEtenTraditional = {
+inline static std::map<std::string, std::string> mapQwertyETenTraditional = {
     {"'", "ㄘ"}, {",", "ㄓ"}, {"-", "ㄥ"}, {".", "ㄔ"}, {"/", "ㄕ"},
     {"0", "ㄤ"}, {"1", "˙"},  {"2", "ˊ"},  {"3", "ˇ"},  {"4", "ˋ"},
     {"7", "ㄑ"}, {"8", "ㄢ"}, {"9", "ㄣ"}, {";", "ㄗ"}, {"=", "ㄦ"},
@@ -1479,13 +1479,13 @@ class Composer {
       case ofDachen26:
         return mapDachenCP26StaticKeys.find(inputKey) !=
                mapDachenCP26StaticKeys.end();
-      case ofEten:
-        return mapQwertyEtenTraditional.find(inputKey) !=
-               mapQwertyEtenTraditional.end();
+      case ofETen:
+        return mapQwertyETenTraditional.find(inputKey) !=
+               mapQwertyETenTraditional.end();
       case ofHsu:
         return mapHsuStaticKeys.find(inputKey) != mapHsuStaticKeys.end();
-      case ofEten26:
-        return mapEten26StaticKeys.find(inputKey) != mapEten26StaticKeys.end();
+      case ofETen26:
+        return mapETen26StaticKeys.find(inputKey) != mapETen26StaticKeys.end();
       case ofIBM:
         return mapQwertyIBM.find(inputKey) != mapQwertyIBM.end();
       case ofMiTAC:
@@ -1695,14 +1695,14 @@ class Composer {
         return mapQwertyDachen.contains(key) ? mapQwertyDachen[key] : "";
       case ofDachen26:
         return handleDachen26(key);
-      case ofEten:
-        return mapQwertyEtenTraditional.contains(key)
-                   ? mapQwertyEtenTraditional[key]
+      case ofETen:
+        return mapQwertyETenTraditional.contains(key)
+                   ? mapQwertyETenTraditional[key]
                    : "";
       case ofHsu:
         return handleHsu(key);
-      case ofEten26:
-        return handleEten26(key);
+      case ofETen26:
+        return handleETen26(key);
       case ofIBM:
         return mapQwertyIBM.contains(key) ? mapQwertyIBM[key] : "";
       case ofMiTAC:
@@ -1726,9 +1726,9 @@ class Composer {
   /// 回傳結果是空字串的話，不要緊，因為該函數內部已經處理過分配過程了。
   ///
   ///  @param key 傳入的 std::string 訊號。
-  std::string handleEten26(std::string key) {
+  std::string handleETen26(std::string key) {
     std::string strReturn =
-        (mapEten26StaticKeys.contains(key)) ? mapEten26StaticKeys[key] : "";
+        (mapETen26StaticKeys.contains(key)) ? mapETen26StaticKeys[key] : "";
     Phonabet incomingPhonabet = Phonabet(strReturn);
 
     switch (hashify(key.c_str())) {
