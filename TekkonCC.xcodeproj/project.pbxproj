@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5B07925E285797BE0009C7B4 /* TekkonCCTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B07925D285797BE0009C7B4 /* TekkonCCTests.mm */; };
+		5B07925E285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */; };
+		5B304FD728585B2A00696C3A /* TekkonCCTests_Basic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */; };
+		5B304FD928585B3100696C3A /* TekkonCCTests_Advanced.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */; };
 		5BF7D5E02857898200BD81A6 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5BF7D5DF2857898200BD81A6 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -24,7 +26,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		5B07925D285797BE0009C7B4 /* TekkonCCTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests.mm; sourceTree = "<group>"; };
+		5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Intermediate.mm; sourceTree = "<group>"; };
+		5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Basic.mm; sourceTree = "<group>"; };
+		5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Advanced.mm; sourceTree = "<group>"; };
 		5B6C78CA28578A83001AA4D1 /* Tekkon.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = Tekkon.hh; sourceTree = "<group>"; };
 		5B6C78DA285792C9001AA4D1 /* TekkonCCTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TekkonCCTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BF7D5DC2857898200BD81A6 /* TekkonCC */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TekkonCC; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -52,7 +56,9 @@
 		5B6C78DB285792C9001AA4D1 /* TekkonCCTests */ = {
 			isa = PBXGroup;
 			children = (
-				5B07925D285797BE0009C7B4 /* TekkonCCTests.mm */,
+				5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */,
+				5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */,
+				5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */,
 			);
 			path = TekkonCCTests;
 			sourceTree = "<group>";
@@ -172,7 +178,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5B07925E285797BE0009C7B4 /* TekkonCCTests.mm in Sources */,
+				5B304FD728585B2A00696C3A /* TekkonCCTests_Basic.mm in Sources */,
+				5B304FD928585B3100696C3A /* TekkonCCTests_Advanced.mm in Sources */,
+				5B07925E285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
