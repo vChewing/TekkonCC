@@ -62,8 +62,8 @@ using namespace Tekkon;
   result = composer.inputValidityCheck(0x002F);
   XCTAssertTrue(result);
 
-  // Testing Correct Eten26 Key
-  composer.ensureParser(ofEten26);
+  // Testing Correct ETen26 Key
+  composer.ensureParser(ofETen26);
   result = composer.inputValidityCheck(0x0062);
   XCTAssertTrue(result);
 
