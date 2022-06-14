@@ -46,13 +46,13 @@ namespace Tekkon {
 
 // MARK: - 幾個工具函數（語法糖），讓 Cpp 更好用。
 
-static std::string charToString(char theChar) {
+inline static std::string charToString(char theChar) {
   std::string result(1, theChar);
   return result;
 }
 
-static void replaceOccurrences(std::string& data, std::string toSearch,
-                               std::string replaceStr) {
+inline static void replaceOccurrences(std::string& data, std::string toSearch,
+                                      std::string replaceStr) {
   size_t position = data.find(toSearch);
   while (position != std::string::npos) {
     data.replace(position, toSearch.size(), replaceStr);
@@ -88,14 +88,14 @@ std::vector<T>& operator+=(std::vector<T>& x, std::vector<T>& y) {
   return x;
 }
 
-// The following is taken from boost internals.
+// The following function is taken from boost internals.
 // License https://www.boost.org/users/license.html
-inline unsigned utf8ByteCount(uint8_t c) {
+inline static unsigned utf8ByteCount(uint8_t theChar) {
   // if the most significant bit with a zero in it is in position
   // 8-N then there are N bytes in this UTF-8 sequence:
   uint8_t mask = 0x80u;
   unsigned result = 0;
-  while (c & mask) {
+  while (theChar & mask) {
     ++result;
     mask >>= 1;
   }
@@ -104,7 +104,7 @@ inline unsigned utf8ByteCount(uint8_t c) {
 
 // The following function is taken from boost internals.
 // License https://www.boost.org/users/license.html
-std::vector<std::string> splitByCodepoint(std::string input) {
+inline static std::vector<std::string> splitByCodepoint(std::string input) {
   std::vector<std::string> arrReturned;
   auto netaIterated = input.cbegin();
   while (netaIterated != input.cend()) {
@@ -145,27 +145,28 @@ enum MandarinParser : int {
 };
 
 /// 引擎僅接受這些記號作為聲母
-const std::vector<std::string> allowedConsonants = {
+inline static std::vector<std::string> allowedConsonants = {
     "ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄉ", "ㄊ", "ㄋ", "ㄌ", "ㄍ", "ㄎ", "ㄏ",
     "ㄐ", "ㄑ", "ㄒ", "ㄓ", "ㄔ", "ㄕ", "ㄖ", "ㄗ", "ㄘ", "ㄙ"};
 
 /// 引擎僅接受這些記號作為介母
-const std::vector<std::string> allowedSemivowels = {"ㄧ", "ㄨ", "ㄩ"};
+inline static std::vector<std::string> allowedSemivowels = {"ㄧ", "ㄨ", "ㄩ"};
 
 /// 引擎僅接受這些記號作為韻母
-const std::vector<std::string> allowedVowels = {"ㄚ", "ㄛ", "ㄜ", "ㄝ", "ㄞ",
-                                                "ㄟ", "ㄠ", "ㄡ", "ㄢ", "ㄣ",
-                                                "ㄤ", "ㄥ", "ㄦ"};
+inline static std::vector<std::string> allowedVowels = {
+    "ㄚ", "ㄛ", "ㄜ", "ㄝ", "ㄞ", "ㄟ", "ㄠ",
+    "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ", "ㄦ"};
 
 /// 引擎僅接受這些記號作為聲調
-const std::vector<std::string> allowedIntonations = {" ", "ˊ", "ˇ", "ˋ", "˙"};
+inline static std::vector<std::string> allowedIntonations = {" ", "ˊ", "ˇ", "ˋ",
+                                                             "˙"};
 
 /// 引擎僅接受這些記號作為注音（聲介韻調四個集合加起來）
-const std::vector<std::string> allowedPhonabets =
+inline static std::vector<std::string> allowedPhonabets =
     allowedConsonants + allowedSemivowels + allowedVowels + allowedIntonations;
 
 /// 原始轉換對照表資料貯存專用佇列（數字標調格式）
-static std::vector<std::vector<std::string>> arrPhonaToHanyuPinyin =
+inline static std::vector<std::vector<std::string>> arrPhonaToHanyuPinyin =
     {  // 排序很重要。先處理最長的，再處理短的。不然會出亂子。
         {" ", "1"},           {"ˊ", "2"},           {"ˇ", "3"},
         {"ˋ", "4"},           {"˙", "5"},
@@ -322,7 +323,7 @@ static std::vector<std::vector<std::string>> arrPhonaToHanyuPinyin =
         {"ㄩ", "yu"}};
 
 /// 漢語拼音韻母轉換對照表資料貯存專用佇列
-static std::vector<std::vector<std::string>>
+inline static std::vector<std::vector<std::string>>
     arrHanyuPinyinTextbookStyleConversionTable =
         {  // 排序很重要。先處理最長的，再處理短的。不然會出亂子。
             {"iang1", "iāng"}, {"iang2", "iáng"}, {"iang3", "iǎng"},
@@ -387,15 +388,16 @@ static std::vector<std::vector<std::string>>
 
 /// 任何形式的拼音排列都會用到的陣列，用 Strings 反而省事一些。
 /// 這裡同時兼容大千注音的調號數字，所以也將 6、7 號數字鍵放在允許範圍內。
-static std::string mapArayuruPinyin = "abcdefghijklmnopqrstuvwxyz1234567 ";
+inline static std::string mapArayuruPinyin =
+    "abcdefghijklmnopqrstuvwxyz1234567 ";
 
 /// 任何拼音都會用到的聲調鍵陣列
-static std::map<std::string, std::string> mapArayuruPinyinIntonation = {
+inline static std::map<std::string, std::string> mapArayuruPinyinIntonation = {
     {"1", " "}, {"2", "ˊ"}, {"3", "ˇ"}, {"4", "ˋ"},
     {"5", "˙"}, {"6", "ˊ"}, {"7", "˙"}, {" ", " "}};
 
 /// 漢語拼音排列專用處理陣列
-static std::map<std::string, std::string> mapHanyuPinyin = {
+inline static std::map<std::string, std::string> mapHanyuPinyin = {
     {"chuang", "ㄔㄨㄤ"}, {"shuang", "ㄕㄨㄤ"}, {"zhuang", "ㄓㄨㄤ"},
     {"chang", "ㄔㄤ"},    {"cheng", "ㄔㄥ"},    {"chong", "ㄔㄨㄥ"},
     {"chuai", "ㄔㄨㄞ"},  {"chuan", "ㄔㄨㄢ"},  {"guang", "ㄍㄨㄤ"},
@@ -541,7 +543,7 @@ static std::map<std::string, std::string> mapHanyuPinyin = {
     {"q", "ㄑ"}};
 
 /// 國音二式排列專用處理陣列
-static std::map<std::string, std::string> mapSecondaryPinyin = {
+inline static std::map<std::string, std::string> mapSecondaryPinyin = {
     {"chuang", "ㄔㄨㄤ"}, {"shuang", "ㄕㄨㄤ"}, {"chiang", "ㄑㄧㄤ"},
     {"chiung", "ㄑㄩㄥ"}, {"chiuan", "ㄑㄩㄢ"}, {"shiang", "ㄒㄧㄤ"},
     {"shiung", "ㄒㄩㄥ"}, {"shiuan", "ㄒㄩㄢ"}, {"biang", "ㄅㄧㄤ"},
@@ -685,7 +687,7 @@ static std::map<std::string, std::string> mapSecondaryPinyin = {
     {"a", "ㄚ"},          {"o", "ㄛ"},          {"e", "ㄜ"}};
 
 /// 耶魯拼音排列專用處理陣列
-static std::map<std::string, std::string> mapYalePinyin = {
+inline static std::map<std::string, std::string> mapYalePinyin = {
     {"chwang", "ㄔㄨㄤ"}, {"shwang", "ㄕㄨㄤ"}, {"chyang", "ㄑㄧㄤ"},
     {"chyung", "ㄑㄩㄥ"}, {"chywan", "ㄑㄩㄢ"}, {"byang", "ㄅㄧㄤ"},
     {"dwang", "ㄉㄨㄤ"},  {"jwang", "ㄓㄨㄤ"},  {"syang", "ㄒㄧㄤ"},
@@ -829,7 +831,7 @@ static std::map<std::string, std::string> mapYalePinyin = {
     {"a", "ㄚ"},          {"o", "ㄛ"},          {"e", "ㄜ"}};
 
 /// 華羅拼音排列專用處理陣列
-static std::map<std::string, std::string> mapHualuoPinyin = {
+inline static std::map<std::string, std::string> mapHualuoPinyin = {
     {"shuang", "ㄕㄨㄤ"}, {"jhuang", "ㄓㄨㄤ"}, {"chyueh", "ㄑㄩㄝ"},
     {"chyuan", "ㄑㄩㄢ"}, {"chyong", "ㄑㄩㄥ"}, {"chiang", "ㄑㄧㄤ"},
     {"chuang", "ㄔㄨㄤ"}, {"biang", "ㄅㄧㄤ"},  {"duang", "ㄉㄨㄤ"},
@@ -973,7 +975,7 @@ static std::map<std::string, std::string> mapHualuoPinyin = {
     {"o", "ㄛ"},          {"e", "ㄜ"},          {"a", "ㄚ"}};
 
 /// 通用拼音排列專用處理陣列
-static std::map<std::string, std::string> mapUniversalPinyin = {
+inline static std::map<std::string, std::string> mapUniversalPinyin = {
     {"shuang", "ㄕㄨㄤ"}, {"jhuang", "ㄓㄨㄤ"}, {"chuang", "ㄔㄨㄤ"},
     {"biang", "ㄅㄧㄤ"},  {"duang", "ㄉㄨㄤ"},  {"cyuan", "ㄑㄩㄢ"},
     {"cyong", "ㄑㄩㄥ"},  {"ciang", "ㄑㄧㄤ"},  {"kyang", "ㄎㄧㄤ"},
@@ -1124,7 +1126,7 @@ static std::map<std::string, std::string> mapUniversalPinyin = {
 /// 諸如倚天傳統等其它注音鍵盤排列的支援。如果要將鐵
 /// 恨模組拿給別的平台的輸入法使用的話，恐怕需要針對
 /// 這些注音鍵盤排列各自新增專用陣列才可以。
-static std::map<std::string, std::string> mapQwertyDachen = {
+inline static std::map<std::string, std::string> mapQwertyDachen = {
     {"0", "ㄢ"}, {"1", "ㄅ"}, {"2", "ㄉ"}, {"3", "ˇ"},  {"4", "ˋ"},
     {"5", "ㄓ"}, {"6", "ˊ"},  {"7", "˙"},  {"8", "ㄚ"}, {"9", "ㄞ"},
     {"-", "ㄦ"}, {",", "ㄝ"}, {".", "ㄡ"}, {"/", "ㄥ"}, {";", "ㄤ"},
@@ -1140,7 +1142,7 @@ static std::map<std::string, std::string> mapQwertyDachen = {
 /// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
 /// 這裡提前對複音按鍵做處理，然後再用程式判斷介母類型、
 /// 據此判斷是否需要做複音切換。
-static std::map<std::string, std::string> mapDachenCP26StaticKeys = {
+inline static std::map<std::string, std::string> mapDachenCP26StaticKeys = {
     {"a", "ㄇ"}, {"b", "ㄖ"}, {"c", "ㄏ"}, {"d", "ㄎ"}, {"e", "ㄍ"},
     {"f", "ㄑ"}, {"g", "ㄕ"}, {"h", "ㄘ"}, {"i", "ㄛ"}, {"j", "ㄨ"},
     {"k", "ㄜ"}, {"l", "ㄠ"}, {"m", "ㄩ"}, {"n", "ㄙ"}, {"o", "ㄟ"},
@@ -1153,7 +1155,7 @@ static std::map<std::string, std::string> mapDachenCP26StaticKeys = {
 /// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
 /// 這裡提前對複音按鍵做處理，然後再用程式判斷介母類型、
 /// 據此判斷是否需要做複音切換。
-static std::map<std::string, std::string> mapHsuStaticKeys = {
+inline static std::map<std::string, std::string> mapHsuStaticKeys = {
     {"a", "ㄘ"}, {"b", "ㄅ"}, {"c", "ㄒ"}, {"d", "ㄉ"}, {"e", "ㄧ"},
     {"f", "ㄈ"}, {"g", "ㄍ"}, {"h", "ㄏ"}, {"i", "ㄞ"}, {"j", "ㄐ"},
     {"k", "ㄎ"}, {"l", "ㄌ"}, {"m", "ㄇ"}, {"n", "ㄋ"}, {"o", "ㄡ"},
@@ -1166,7 +1168,7 @@ static std::map<std::string, std::string> mapHsuStaticKeys = {
 /// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
 /// 這裡提前對ㄓ/ㄍ/ㄕ做處理，然後再用程式判斷介母類型、
 /// 據此判斷是否需要換成ㄒ/ㄑ/ㄐ。
-static std::map<std::string, std::string> mapEten26StaticKeys = {
+inline static std::map<std::string, std::string> mapEten26StaticKeys = {
     {"a", "ㄚ"}, {"b", "ㄅ"}, {"c", "ㄕ"}, {"d", "ㄉ"}, {"e", "ㄧ"},
     {"f", "ㄈ"}, {"g", "ㄓ"}, {"h", "ㄏ"}, {"i", "ㄞ"}, {"j", "ㄖ"},
     {"k", "ㄎ"}, {"l", "ㄌ"}, {"m", "ㄇ"}, {"n", "ㄋ"}, {"o", "ㄛ"},
@@ -1175,7 +1177,7 @@ static std::map<std::string, std::string> mapEten26StaticKeys = {
     {"z", "ㄠ"}, {" ", " "}};
 
 /// 倚天傳統排列專用處理陣列。
-static std::map<std::string, std::string> mapQwertyEtenTraditional = {
+inline static std::map<std::string, std::string> mapQwertyEtenTraditional = {
     {"'", "ㄘ"}, {",", "ㄓ"}, {"-", "ㄥ"}, {".", "ㄔ"}, {"/", "ㄕ"},
     {"0", "ㄤ"}, {"1", "˙"},  {"2", "ˊ"},  {"3", "ˇ"},  {"4", "ˋ"},
     {"7", "ㄑ"}, {"8", "ㄢ"}, {"9", "ㄣ"}, {";", "ㄗ"}, {"=", "ㄦ"},
@@ -1187,7 +1189,7 @@ static std::map<std::string, std::string> mapQwertyEtenTraditional = {
     {"z", "ㄠ"}, {" ", " "}};
 
 /// IBM排列專用處理陣列。
-static std::map<std::string, std::string> mapQwertyIBM = {
+inline static std::map<std::string, std::string> mapQwertyIBM = {
     {",", "ˇ"},  {"-", "ㄏ"}, {".", "ˋ"},  {"/", "˙"},  {"0", "ㄎ"},
     {"1", "ㄅ"}, {"2", "ㄆ"}, {"3", "ㄇ"}, {"4", "ㄈ"}, {"5", "ㄉ"},
     {"6", "ㄊ"}, {"7", "ㄋ"}, {"8", "ㄌ"}, {"9", "ㄍ"}, {";", "ㄠ"},
@@ -1199,7 +1201,7 @@ static std::map<std::string, std::string> mapQwertyIBM = {
     {"z", "ㄡ"}, {" ", " "}};
 
 /// 精業排列專用處理陣列。
-static std::map<std::string, std::string> mapSeigyou = {
+inline static std::map<std::string, std::string> mapSeigyou = {
     {"a", "ˇ"},  {"b", "ㄒ"}, {"c", "ㄌ"}, {"d", "ㄋ"}, {"e", "ㄊ"},
     {"f", "ㄎ"}, {"g", "ㄑ"}, {"h", "ㄕ"}, {"i", "ㄛ"}, {"j", "ㄘ"},
     {"k", "ㄜ"}, {"l", "ㄠ"}, {"m", "ㄙ"}, {"n", "ㄖ"}, {"o", "ㄟ"},
@@ -1211,7 +1213,7 @@ static std::map<std::string, std::string> mapSeigyou = {
     {"=", "ㄦ"}, {" ", " "}};
 
 /// 偽精業排列專用處理陣列。
-static std::map<std::string, std::string> mapFakeSeigyou = {
+inline static std::map<std::string, std::string> mapFakeSeigyou = {
     {"a", "ˇ"},  {"b", "ㄒ"}, {"c", "ㄌ"}, {"d", "ㄋ"}, {"e", "ㄊ"},
     {"f", "ㄎ"}, {"g", "ㄑ"}, {"h", "ㄕ"}, {"i", "ㄛ"}, {"j", "ㄘ"},
     {"k", "ㄜ"}, {"l", "ㄠ"}, {"m", "ㄙ"}, {"n", "ㄖ"}, {"o", "ㄟ"},
@@ -1223,7 +1225,7 @@ static std::map<std::string, std::string> mapFakeSeigyou = {
     {"-", "ㄦ"}, {" ", " "}};
 
 /// 神通排列專用處理陣列。
-static std::map<std::string, std::string> mapQwertyMiTAC = {
+inline static std::map<std::string, std::string> mapQwertyMiTAC = {
     {",", "ㄓ"}, {"-", "ㄦ"}, {".", "ㄔ"}, {"/", "ㄕ"}, {"0", "ㄥ"},
     {"1", "˙"},  {"2", "ˊ"},  {"3", "ˇ"},  {"4", "ˋ"},  {"5", "ㄞ"},
     {"6", "ㄠ"}, {"7", "ㄢ"}, {"8", "ㄣ"}, {"9", "ㄤ"}, {";", "ㄝ"},
@@ -1236,7 +1238,7 @@ static std::map<std::string, std::string> mapQwertyMiTAC = {
 };
 
 /// 用以判定拼音鍵盤佈局的集合
-static std::vector<MandarinParser> arrPinyinParsers = {
+inline static std::vector<MandarinParser> arrPinyinParsers = {
     ofHanyuPinyin, ofSecondaryPinyin, ofYalePinyin, ofHualuoPinyin,
     ofUniversalPinyin};
 
@@ -1245,7 +1247,7 @@ static std::vector<MandarinParser> arrPinyinParsers = {
 /// 注音轉拼音，要求陰平必須是空格。
 ///
 /// @param target 傳入的 String 對象物件。
-static std::string cnvPhonaToHanyuPinyin(std::string target = "") {
+inline static std::string cnvPhonaToHanyuPinyin(std::string target = "") {
   std::string strResult = std::move(target);
   for (std::vector<std::string> i : arrPhonaToHanyuPinyin) {
     replaceOccurrences(strResult, i[0], i[1]);
@@ -1256,7 +1258,8 @@ static std::string cnvPhonaToHanyuPinyin(std::string target = "") {
 /// 漢語拼音數字標調式轉漢語拼音教科書格式，要求陰平必須是數字 1。
 ///
 /// @param target 傳入的 String 對象物件。
-static std::string cnvHanyuPinyinToTextBookStyle(std::string target = "") {
+inline static std::string cnvHanyuPinyinToTextBookStyle(
+    std::string target = "") {
   std::string strResult = std::move(target);
   for (std::vector<std::string> i :
        arrHanyuPinyinTextbookStyleConversionTable) {
