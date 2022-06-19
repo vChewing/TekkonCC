@@ -3,7 +3,7 @@
 - Gitee: [Swift](https://gitee.com/vChewing/Tekkon) | [C#](https://gitee.com/vChewing/TekkonNT) | [C++](https://gitee.com/vChewing/TekkonCC)
 - GitHub: [Swift](https://github.com/ShikiSuen/Tekkon) | [C#](https://github.com/ShikiSuen/TekkonNT) | [C++](https://github.com/ShikiSuen/TekkonCC)
 
-相關使用說明請參見 Swift 版的倉庫的 README.MD。函數用法完全一致。
+相關使用說明請參見 Swift 版的倉庫的 README.MD。函式用法完全一致。
 
 鐵恨引擎的 Cpp 版本，依 Cpp 20 標準編寫完成。
 

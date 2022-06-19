@@ -44,7 +44,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 // The namespace for this package.
 namespace Tekkon {
 
-// MARK: - 幾個工具函數（語法糖），讓 Cpp 更好用。
+// MARK: - 幾個工具函式（語法糖），讓 Cpp 更好用。
 
 inline static std::string charToString(char theChar) {
   std::string result(1, theChar);
@@ -1166,8 +1166,8 @@ inline static std::map<std::string, std::string> mapHsuStaticKeys = {
 /// 倚天忘形排列預處理專用陣列，但未包含全部的映射內容。
 ///
 /// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
-/// 這裡提前對ㄓ/ㄍ/ㄕ做處理，然後再用程式判斷介母類型、
-/// 據此判斷是否需要換成ㄒ/ㄑ/ㄐ。
+/// 這裡提前對複音按鍵做處理，然後再用程式判斷介母類型、
+/// 據此判斷是否需要做複音切換。
 inline static std::map<std::string, std::string> mapETen26StaticKeys = {
     {"a", "ㄚ"}, {"b", "ㄅ"}, {"c", "ㄕ"}, {"d", "ㄉ"}, {"e", "ㄧ"},
     {"f", "ㄈ"}, {"g", "ㄓ"}, {"h", "ㄏ"}, {"i", "ㄞ"}, {"j", "ㄖ"},
@@ -1351,7 +1351,7 @@ class Composer {
            intonation.value();
   };
 
-  /// 與 value 類似，這個函數就是用來決定輸入法組字區內顯示的注音/拼音內容，
+  /// 與 value 類似，這個函式就是用來決定輸入法組字區內顯示的注音/拼音內容，
   /// 但可以指定是否輸出教科書格式（拼音的調號在字母上方、注音的輕聲寫在左側）。
   ///
   /// @param isHanyuPinyin 是否將輸出結果轉成漢語拼音。
@@ -1384,7 +1384,7 @@ class Composer {
     }
   }
 
-  // 該函數僅用來獲取給 macOS InputMethod Kit 的內文組字區使用的顯示字串。
+  // 該函式僅用來獲取給 macOS InputMethod Kit 的內文組字區使用的顯示字串。
   ///
   /// @param isHanyuPinyin 是否將輸出結果轉成漢語拼音。
   std::string getInlineCompositionForIMK(bool isHanyuPinyin = false) {
@@ -1438,7 +1438,7 @@ class Composer {
     return !vowel.isEmpty() || !semivowel.isEmpty() || !consonant.isEmpty();
   }
 
-  // MARK: 注拼槽對外處理函數.
+  // MARK: 注拼槽對外處理函式.
 
   ~Composer() { clear(); }
 
@@ -1465,7 +1465,7 @@ class Composer {
     romajiBuffer.clear();
   }
 
-  /// 用於檢測「某個輸入字符訊號的合規性」的函數。
+  /// 用於檢測「某個輸入字符訊號的合規性」的函式。
   ///
   /// 注意：回傳結果會受到當前注音排列 parser 屬性的影響。
   ///
@@ -1505,7 +1505,7 @@ class Composer {
   }
 
   /// 接受傳入的按鍵訊號時的處理，處理對象為 String。
-  /// 另有同名函數可處理 UniChar 訊號。
+  /// 另有同名函式可處理 UniChar 訊號。
   ///
   /// 如果是諸如複合型注音排列的話，翻譯結果有可能為空，但翻譯過程已經處理好聲介韻調分配了。
   ///
@@ -1538,7 +1538,7 @@ class Composer {
   }
 
   /// 接受傳入的按鍵訊號時的處理，處理對象為 UniChar。
-  /// 其實也就是先將 UniChar 轉為 String 再交給某個同名異參的函數來處理而已。
+  /// 其實也就是先將 UniChar 轉為 String 再交給某個同名異參的函式來處理而已。
   ///
   /// 如果是諸如複合型注音排列的話，翻譯結果有可能為空，但翻譯過程已經處理好聲介韻調分配了。
   ///
@@ -1663,7 +1663,7 @@ class Composer {
     }
   }
 
-  /// 用來檢測是否有調號的函數，預設情況下不判定聲調以外的內容的存無。
+  /// 用來檢測是否有調號的函式，預設情況下不判定聲調以外的內容的存無。
   ///
   /// @param withNothingElse 追加判定「槽內是否僅有調號」。
   bool hasToneMarker(bool withNothingElse = false) {
@@ -1681,11 +1681,11 @@ class Composer {
  protected:
   // MARK: - Parser Processings
 
-  // 注拼槽對內處理用函數都在這一小節。
+  // 注拼槽對內處理用函式都在這一小節。
 
   /// 根據目前的注音排列設定來翻譯傳入的 String 訊號。
   ///
-  /// 倚天或許氏鍵盤的處理函數會將分配過程代為處理過，此時回傳結果為空字串。
+  /// 倚天/許氏鍵盤/酷音大千二十六鍵的處理函式會代為處理分配過程，此時回傳結果可能為空字串。
   ///
   /// @param key 傳入的 String 訊號。
 
@@ -1723,7 +1723,7 @@ class Composer {
 
   /// 倚天忘形注音排列比較麻煩，需要單獨處理。
   ///
-  /// 回傳結果是空字串的話，不要緊，因為該函數內部已經處理過分配過程了。
+  /// 回傳結果是空字串的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
   ///  @param key 傳入的 std::string 訊號。
   std::string handleETen26(std::string key) {
@@ -1890,7 +1890,7 @@ class Composer {
 
   /// 許氏鍵盤與倚天忘形一樣同樣也比較麻煩，需要單獨處理。
   ///
-  /// 回傳結果是空的話，不要緊，因為該函數內部已經處理過分配過程了。
+  /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
   ///  @param key 傳入的 std::string 訊號。
   std::string handleHsu(std::string key) {
@@ -2135,7 +2135,7 @@ class Composer {
 
   /// 大千忘形一樣同樣也比較麻煩，需要單獨處理。
   ///
-  /// 回傳結果是空的話，不要緊，因為該函數內部已經處理過分配過程了。
+  /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
   ///  @param key 傳入的 std::string 訊號。
   std::string handleDachen26(std::string key) {
