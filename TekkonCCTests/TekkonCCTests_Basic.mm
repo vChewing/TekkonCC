@@ -102,7 +102,7 @@ using namespace Tekkon;
                  "diao1");  // 中階測試項目
   XCTAssertEqual(composer.getComposition(true, true),
                  "diāo");  // 中階測試項目
-  XCTAssertEqual(composer.getInlineCompositionForIMK(true),
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true),
                  "diao1");  // 中階測試項目
 
   // Test Tone 5
