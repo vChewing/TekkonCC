@@ -66,7 +66,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄉㄧㄠ");
   XCTAssertEqual(composer.getComposition(true, false), "diao1");
   XCTAssertEqual(composer.getComposition(true, true), "diāo");
-  XCTAssertEqual(composer.getInlineCompositionForIMK(true), "diao1");
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "diao1");
 
   // Test Tone 5
   composer.receiveKey("7");  // 輕聲
@@ -118,7 +118,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
   XCTAssertEqual(composer.getComposition(true, false), "qiong1");
   XCTAssertEqual(composer.getComposition(true, true), "qiōng");
-  XCTAssertEqual(composer.getInlineCompositionForIMK(true), "chiung1");
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "chiung1");
 
   // Test Tone 5
   composer.receiveKey("7");  // 輕聲
@@ -170,7 +170,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
   XCTAssertEqual(composer.getComposition(true, false), "qiong1");
   XCTAssertEqual(composer.getComposition(true, true), "qiōng");
-  XCTAssertEqual(composer.getInlineCompositionForIMK(true), "chyung1");
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "chyung1");
 
   // Test Tone 5
   composer.receiveKey("7");  // 輕聲
@@ -222,7 +222,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
   XCTAssertEqual(composer.getComposition(true, false), "qiong1");
   XCTAssertEqual(composer.getComposition(true, true), "qiōng");
-  XCTAssertEqual(composer.getInlineCompositionForIMK(true), "chyong1");
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "chyong1");
 
   // Test Tone 5
   composer.receiveKey("7");  // 輕聲
@@ -273,7 +273,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
   XCTAssertEqual(composer.getComposition(true, false), "qiong1");
   XCTAssertEqual(composer.getComposition(true, true), "qiōng");
-  XCTAssertEqual(composer.getInlineCompositionForIMK(true), "cyong1");
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "cyong1");
 
   // Test Tone 5
   composer.receiveKey("7");  // 輕聲
