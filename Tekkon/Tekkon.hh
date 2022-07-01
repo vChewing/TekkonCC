@@ -1551,6 +1551,29 @@ class Composer {
   /// @param phonabet 傳入的單個注音符號字串。
   void receiveKeyFromPhonabet(std::string phonabet = "") {
     Phonabet thePhone = Phonabet(phonabet);
+    switch (hashify(phonabet.c_str())) {
+      case hashify("ㄛ"):
+        if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
+             consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
+            semivowel.value() == "ㄨ")
+          semivowel.clear();
+        break;
+      case hashify("ㄨ"):
+        if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
+             consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
+            vowel.value() == "ㄛ")
+          vowel.clear();
+        break;
+      case hashify("ㄅ"):
+      case hashify("ㄆ"):
+      case hashify("ㄇ"):
+      case hashify("ㄈ"):
+        if (semivowel.value() + vowel.value() == "ㄨㄛ") {
+          semivowel.clear();
+        }
+      default:
+        break;
+    }
     switch (thePhone.type) {
       case PhoneType::consonant:
         consonant = thePhone;
