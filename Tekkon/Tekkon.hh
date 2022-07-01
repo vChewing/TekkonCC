@@ -1347,6 +1347,20 @@ class Composer {
   /// 注意：直接取這個參數的內容的話，陰平聲調會成為一個空格。
   /// 如果是要取不帶空格的注音的話，請使用「.getComposition()」而非「.Value」。
   std::string value() {
+    if (semivowel.value() + vowel.value() == "ㄨㄛ") {
+      switch (hashify(consonant.value().c_str())) {
+        case hashify("ㄅ"):
+          return "ㄅㄛ" + intonation.value();
+        case hashify("ㄆ"):
+          return "ㄆㄛ" + intonation.value();
+        case hashify("ㄇ"):
+          return "ㄇㄛ" + intonation.value();
+        case hashify("ㄈ"):
+          return "ㄈㄛ" + intonation.value();
+        default:
+          break;
+      }
+    }
     return consonant.value() + semivowel.value() + vowel.value() +
            intonation.value();
   };
