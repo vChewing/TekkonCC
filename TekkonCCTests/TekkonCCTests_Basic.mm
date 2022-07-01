@@ -124,6 +124,19 @@ using namespace Tekkon;
   composer.receiveKey("3");  // 上聲
   toneMarkerIndicator = composer.hasToneMarker(true);
   XCTAssertTrue(toneMarkerIndicator);
+
+  // Testing exceptions of handling "ㄅㄨㄛ ㄆㄨㄛ ㄇㄨㄛ ㄈㄨㄛ"
+  composer.clear();
+  composer.receiveKey("1");
+  composer.receiveKey("j");
+  composer.receiveKey("i");
+  XCTAssertEqual(composer.getComposition(), "ㄅㄛ");
+  composer.receiveKey("q");
+  XCTAssertEqual(composer.getComposition(), "ㄆㄛ");
+  composer.receiveKey("a");
+  XCTAssertEqual(composer.getComposition(), "ㄇㄛ");
+  composer.receiveKey("z");
+  XCTAssertEqual(composer.getComposition(), "ㄈㄛ");
 }
 
 @end
