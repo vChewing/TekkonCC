@@ -1553,6 +1553,7 @@ class Composer {
     Phonabet thePhone = Phonabet(phonabet);
     switch (hashify(phonabet.c_str())) {
       case hashify("ㄛ"):
+      case hashify("ㄥ"):
         if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
              consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
             semivowel.value() == "ㄨ")
@@ -1561,14 +1562,16 @@ class Composer {
       case hashify("ㄨ"):
         if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
              consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
-            vowel.value() == "ㄛ")
+            (vowel.value() == "ㄛ" || vowel.value() == "ㄥ"))
           vowel.clear();
         break;
       case hashify("ㄅ"):
       case hashify("ㄆ"):
       case hashify("ㄇ"):
       case hashify("ㄈ"):
-        if (semivowel.value() + vowel.value() == "ㄨㄛ") semivowel.clear();
+        if (semivowel.value() + vowel.value() == "ㄨㄛ" ||
+            semivowel.value() + vowel.value() == "ㄨㄥ")
+          semivowel.clear();
         break;
       default:
         break;

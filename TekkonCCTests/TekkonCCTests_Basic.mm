@@ -137,6 +137,19 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄇㄛ");
   composer.receiveKey("z");
   XCTAssertEqual(composer.getComposition(), "ㄈㄛ");
+
+  // Testing exceptions of handling "ㄅㄨㄥ ㄆㄨㄥ ㄇㄨㄥ ㄈㄨㄥ"
+  composer.clear();
+  composer.receiveKey("1");
+  composer.receiveKey("j");
+  composer.receiveKey("/");
+  XCTAssertEqual(composer.getComposition(), "ㄅㄥ");
+  composer.receiveKey("q");
+  XCTAssertEqual(composer.getComposition(), "ㄆㄥ");
+  composer.receiveKey("a");
+  XCTAssertEqual(composer.getComposition(), "ㄇㄥ");
+  composer.receiveKey("z");
+  XCTAssertEqual(composer.getComposition(), "ㄈㄥ");
 }
 
 @end
