@@ -1517,7 +1517,7 @@ class Composer {
       case ofYalePinyin:
       case ofHualuoPinyin:
       case ofUniversalPinyin:
-        if (mapArayuruPinyinIntonation.contains(input)) {
+        if (mapArayuruPinyinIntonation.count(input)) {
           std::string theTone = mapArayuruPinyinIntonation[input];
           intonation = Phonabet(theTone);
         } else {
@@ -1608,7 +1608,7 @@ class Composer {
       std::vector<std::string> dictResult;
       switch (parser) {
         case ofHanyuPinyin:
-          if (mapHanyuPinyin.contains(givenSequence))
+          if (mapHanyuPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapHanyuPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1617,7 +1617,7 @@ class Composer {
           }
           break;
         case ofSecondaryPinyin:
-          if (mapSecondaryPinyin.contains(givenSequence))
+          if (mapSecondaryPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapSecondaryPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1626,7 +1626,7 @@ class Composer {
           }
           break;
         case ofYalePinyin:
-          if (mapYalePinyin.contains(givenSequence))
+          if (mapYalePinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapYalePinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1635,7 +1635,7 @@ class Composer {
           }
           break;
         case ofHualuoPinyin:
-          if (mapHualuoPinyin.contains(givenSequence))
+          if (mapHualuoPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapHualuoPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1644,7 +1644,7 @@ class Composer {
           }
           break;
         case ofUniversalPinyin:
-          if (mapUniversalPinyin.contains(givenSequence))
+          if (mapUniversalPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapUniversalPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1717,11 +1717,11 @@ class Composer {
   std::string translate(std::string key) {
     switch (parser) {
       case ofDachen:
-        return mapQwertyDachen.contains(key) ? mapQwertyDachen[key] : "";
+        return mapQwertyDachen.count(key) ? mapQwertyDachen[key] : "";
       case ofDachen26:
         return handleDachen26(key);
       case ofETen:
-        return mapQwertyETenTraditional.contains(key)
+        return mapQwertyETenTraditional.count(key)
                    ? mapQwertyETenTraditional[key]
                    : "";
       case ofHsu:
@@ -1729,13 +1729,13 @@ class Composer {
       case ofETen26:
         return handleETen26(key);
       case ofIBM:
-        return mapQwertyIBM.contains(key) ? mapQwertyIBM[key] : "";
+        return mapQwertyIBM.count(key) ? mapQwertyIBM[key] : "";
       case ofMiTAC:
-        return mapQwertyMiTAC.contains(key) ? mapQwertyMiTAC[key] : "";
+        return mapQwertyMiTAC.count(key) ? mapQwertyMiTAC[key] : "";
       case ofSeigyou:
-        return mapSeigyou.contains(key) ? mapSeigyou[key] : "";
+        return mapSeigyou.count(key) ? mapSeigyou[key] : "";
       case ofFakeSeigyou:
-        return mapFakeSeigyou.contains(key) ? mapFakeSeigyou[key] : "";
+        return mapFakeSeigyou.count(key) ? mapFakeSeigyou[key] : "";
       case ofHanyuPinyin:
       case ofSecondaryPinyin:
       case ofYalePinyin:
@@ -1753,7 +1753,7 @@ class Composer {
   ///  @param key 傳入的 std::string 訊號。
   std::string handleETen26(std::string key) {
     std::string strReturn =
-        (mapETen26StaticKeys.contains(key)) ? mapETen26StaticKeys[key] : "";
+        (mapETen26StaticKeys.count(key)) ? mapETen26StaticKeys[key] : "";
     Phonabet incomingPhonabet = Phonabet(strReturn);
 
     switch (hashify(key.c_str())) {
@@ -1920,7 +1920,7 @@ class Composer {
   ///  @param key 傳入的 std::string 訊號。
   std::string handleHsu(std::string key) {
     std::string strReturn =
-        (mapHsuStaticKeys.contains(key)) ? mapHsuStaticKeys[key] : "";
+        (mapHsuStaticKeys.count(key)) ? mapHsuStaticKeys[key] : "";
     Phonabet incomingPhonabet = Phonabet(strReturn);
 
     if (key == " " && value() == "ㄋ") {
@@ -2164,7 +2164,7 @@ class Composer {
   ///
   ///  @param key 傳入的 std::string 訊號。
   std::string handleDachen26(std::string key) {
-    std::string strReturn = (mapDachenCP26StaticKeys.contains(key))
+    std::string strReturn = (mapDachenCP26StaticKeys.count(key))
                                 ? mapDachenCP26StaticKeys[key]
                                 : "";
 
