@@ -36,7 +36,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <map>
+#include <numeric>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1268,6 +1271,81 @@ inline static std::string cnvHanyuPinyinToTextBookStyle(
   return strResult;
 }
 
+/// 該函式負責將注音轉為教科書印刷的方式（先寫輕聲）。
+/// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
+/// @param newSeparator 新的讀音分隔符。
+/// @returns 經過轉換處理的讀音鏈。
+inline static std::string cnvZhuyinChainToTextbookReading(
+    std::string target = "", std::string newSeparator = "-") {
+  std::vector<std::string> arrReturn = {};
+  std::string tempNeta;
+  std::stringstream targetStream(target);
+  while (std::getline(targetStream, tempNeta, '-')) {
+    if (tempNeta.find("˙") != std::string::npos) {
+      // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
+      tempNeta.pop_back();
+      tempNeta.pop_back();
+      tempNeta = "˙" + tempNeta;
+    }
+    arrReturn.push_back(tempNeta);
+  }
+  return std::accumulate(arrReturn.begin(), arrReturn.end(), std::string(),
+                         [&newSeparator](const std::string& a,
+                                         const std::string& b) -> std::string {
+                           return a + (a.length() > 0 ? newSeparator : "") + b;
+                         });
+}
+
+/// 該函式用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
+/// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
+/// @param newSeparator 新的讀音分隔符。
+/// @returns 經過轉換處理的讀音鏈。
+inline static std::string restoreToneOneInZhuyinKey(
+    std::string target = "", std::string newSeparator = "-") {
+  std::vector<std::string> arrReturn = {};
+  std::string tempNeta;
+  std::stringstream targetStream(target);
+  while (std::getline(targetStream, tempNeta, '-')) {
+    if (tempNeta.find("ˊ") == std::string::npos &&
+        tempNeta.find("ˇ") == std::string::npos &&
+        tempNeta.find("ˋ") == std::string::npos &&
+        tempNeta.find("˙") == std::string::npos)
+      tempNeta = tempNeta + "1";
+    arrReturn.push_back(tempNeta);
+  }
+  return std::accumulate(arrReturn.begin(), arrReturn.end(), std::string(),
+                         [&newSeparator](const std::string& a,
+                                         const std::string& b) -> std::string {
+                           return a + (a.length() > 0 ? newSeparator : "") + b;
+                         });
+}
+
+inline static std::string cnvHanyuPinyinToPhona(std::string target = "") {
+  std::string strResult = std::move(target);
+  std::vector<std::string> keyListHYPY;
+  for (auto const& i : mapHanyuPinyin) keyListHYPY.push_back(i.first);
+  std::sort(keyListHYPY.begin(), keyListHYPY.end(),
+            [](const std::string& first, const std::string& second) {
+              return first.size() > second.size();
+            });
+
+  std::vector<std::string> keyListIntonation;
+  for (auto const& i : mapArayuruPinyinIntonation)
+    keyListIntonation.push_back(i.first);
+  std::sort(keyListIntonation.begin(), keyListIntonation.end(),
+            [](const std::string& first, const std::string& second) {
+              return first.size() > second.size();
+            });
+
+  for (auto i : keyListHYPY) {
+    replaceOccurrences(strResult, i, mapHanyuPinyin[i]);
+  }
+  for (auto i : keyListIntonation) {
+    replaceOccurrences(strResult, i, mapArayuruPinyinIntonation[i]);
+  }
+  return strResult;
+}
+
 // ========================================================================
 // ======================== REAL THINGS BEGIN HERE ========================
 // ========================================================================
@@ -1343,6 +1421,9 @@ class Composer {
   /// 注音排列種類。預設情況下是大千排列（Windows / macOS 預設注音排列）。
   MandarinParser parser = ofDachen;
 
+  /// 是否對錯誤的注音讀音組合做出自動糾正處理。
+  bool phonabetCombinationCorrectionEnabled;
+
   /// 內容值，會直接按照正確的順序拼裝自己的聲介韻調內容、再回傳。
   /// 注意：直接取這個參數的內容的話，陰平聲調會成為一個空格。
   /// 如果是要取不帶空格的注音的話，請使用「.getComposition()」而非「.Value」。
@@ -1362,18 +1443,12 @@ class Composer {
       std::string valReturnPinyin = cnvPhonaToHanyuPinyin(value());
       if (isTextBookStyle)
         valReturnPinyin = cnvHanyuPinyinToTextBookStyle(valReturnPinyin);
-      // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
-      // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。
-      if (valReturnPinyin.back() == '\xCB') {
-        valReturnPinyin.pop_back();
-      }
       return valReturnPinyin;
     } else {  // 注音輸出的場合
       std::string valReturnZhuyin = value();
       replaceOccurrences(valReturnZhuyin, " ", "");
-      if (isTextBookStyle && valReturnZhuyin.find("˙") != std::string::npos) {
-        valReturnZhuyin.pop_back();
-        valReturnZhuyin = "˙" + valReturnZhuyin;
+      if (isTextBookStyle) {
+        valReturnZhuyin = cnvZhuyinChainToTextbookReading(valReturnZhuyin);
       }
       // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
       // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。
@@ -1448,7 +1523,10 @@ class Composer {
   ///
   /// @param input 傳入的 String 內容，用以處理單個字符。
   /// @param arrange 要使用的注音排列。
-  explicit Composer(std::string input = "", MandarinParser arrange = ofDachen) {
+  /// @param correction 是否對錯誤的注音讀音組合做出自動糾正處理。
+  explicit Composer(std::string input = "", MandarinParser arrange = ofDachen,
+                    bool correction = false) {
+    phonabetCombinationCorrectionEnabled = correction;
     romajiBuffer = "";
     ensureParser(arrange);
     receiveKey(input);
@@ -1517,7 +1595,7 @@ class Composer {
       case ofYalePinyin:
       case ofHualuoPinyin:
       case ofUniversalPinyin:
-        if (mapArayuruPinyinIntonation.contains(input)) {
+        if (mapArayuruPinyinIntonation.count(input)) {
           std::string theTone = mapArayuruPinyinIntonation[input];
           intonation = Phonabet(theTone);
         } else {
@@ -1552,6 +1630,14 @@ class Composer {
   void receiveKeyFromPhonabet(std::string phonabet = "") {
     Phonabet thePhone = Phonabet(phonabet);
     switch (hashify(phonabet.c_str())) {
+      case hashify("ㄧ"):
+      case hashify("ㄩ"):
+        if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
+        break;
+      case hashify("ㄜ"):
+        if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
+          thePhone = Phonabet("ㄝ");
+        break;
       case hashify("ㄛ"):
       case hashify("ㄥ"):
         if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
@@ -1559,10 +1645,18 @@ class Composer {
             semivowel.value() == "ㄨ")
           semivowel.clear();
         break;
+      case hashify("ㄟ"):
+        if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
+            (semivowel.value() == "ㄨ"))
+          semivowel.clear();
+        break;
       case hashify("ㄨ"):
         if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
              consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
             (vowel.value() == "ㄛ" || vowel.value() == "ㄥ"))
+          vowel.clear();
+        if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
+            (vowel.value() == "ㄟ"))
           vowel.clear();
         break;
       case hashify("ㄅ"):
@@ -1608,7 +1702,7 @@ class Composer {
       std::vector<std::string> dictResult;
       switch (parser) {
         case ofHanyuPinyin:
-          if (mapHanyuPinyin.contains(givenSequence))
+          if (mapHanyuPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapHanyuPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1617,7 +1711,7 @@ class Composer {
           }
           break;
         case ofSecondaryPinyin:
-          if (mapSecondaryPinyin.contains(givenSequence))
+          if (mapSecondaryPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapSecondaryPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1626,7 +1720,7 @@ class Composer {
           }
           break;
         case ofYalePinyin:
-          if (mapYalePinyin.contains(givenSequence))
+          if (mapYalePinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapYalePinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1635,7 +1729,7 @@ class Composer {
           }
           break;
         case ofHualuoPinyin:
-          if (mapHualuoPinyin.contains(givenSequence))
+          if (mapHualuoPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapHualuoPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1644,7 +1738,7 @@ class Composer {
           }
           break;
         case ofUniversalPinyin:
-          if (mapUniversalPinyin.contains(givenSequence))
+          if (mapUniversalPinyin.count(givenSequence))
             dictResult = splitByCodepoint(mapUniversalPinyin[givenSequence]);
           if (!dictResult.empty()) {
             for (std::string phonabet : dictResult) {
@@ -1713,15 +1807,14 @@ class Composer {
   /// 倚天/許氏鍵盤/酷音大千二十六鍵的處理函式會代為處理分配過程，此時回傳結果可能為空字串。
   ///
   /// @param key 傳入的 String 訊號。
-
   std::string translate(std::string key) {
     switch (parser) {
       case ofDachen:
-        return mapQwertyDachen.contains(key) ? mapQwertyDachen[key] : "";
+        return mapQwertyDachen.count(key) ? mapQwertyDachen[key] : "";
       case ofDachen26:
         return handleDachen26(key);
       case ofETen:
-        return mapQwertyETenTraditional.contains(key)
+        return mapQwertyETenTraditional.count(key)
                    ? mapQwertyETenTraditional[key]
                    : "";
       case ofHsu:
@@ -1729,13 +1822,13 @@ class Composer {
       case ofETen26:
         return handleETen26(key);
       case ofIBM:
-        return mapQwertyIBM.contains(key) ? mapQwertyIBM[key] : "";
+        return mapQwertyIBM.count(key) ? mapQwertyIBM[key] : "";
       case ofMiTAC:
-        return mapQwertyMiTAC.contains(key) ? mapQwertyMiTAC[key] : "";
+        return mapQwertyMiTAC.count(key) ? mapQwertyMiTAC[key] : "";
       case ofSeigyou:
-        return mapSeigyou.contains(key) ? mapSeigyou[key] : "";
+        return mapSeigyou.count(key) ? mapSeigyou[key] : "";
       case ofFakeSeigyou:
-        return mapFakeSeigyou.contains(key) ? mapFakeSeigyou[key] : "";
+        return mapFakeSeigyou.count(key) ? mapFakeSeigyou[key] : "";
       case ofHanyuPinyin:
       case ofSecondaryPinyin:
       case ofYalePinyin:
@@ -1753,7 +1846,7 @@ class Composer {
   ///  @param key 傳入的 std::string 訊號。
   std::string handleETen26(std::string key) {
     std::string strReturn =
-        (mapETen26StaticKeys.contains(key)) ? mapETen26StaticKeys[key] : "";
+        (mapETen26StaticKeys.count(key)) ? mapETen26StaticKeys[key] : "";
     Phonabet incomingPhonabet = Phonabet(strReturn);
 
     switch (hashify(key.c_str())) {
@@ -1920,7 +2013,7 @@ class Composer {
   ///  @param key 傳入的 std::string 訊號。
   std::string handleHsu(std::string key) {
     std::string strReturn =
-        (mapHsuStaticKeys.contains(key)) ? mapHsuStaticKeys[key] : "";
+        (mapHsuStaticKeys.count(key)) ? mapHsuStaticKeys[key] : "";
     Phonabet incomingPhonabet = Phonabet(strReturn);
 
     if (key == " " && value() == "ㄋ") {
@@ -2164,7 +2257,7 @@ class Composer {
   ///
   ///  @param key 傳入的 std::string 訊號。
   std::string handleDachen26(std::string key) {
-    std::string strReturn = (mapDachenCP26StaticKeys.contains(key))
+    std::string strReturn = (mapDachenCP26StaticKeys.count(key))
                                 ? mapDachenCP26StaticKeys[key]
                                 : "";
 
