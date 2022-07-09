@@ -150,6 +150,9 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄇㄥ");
   composer.receiveKey("z");
   XCTAssertEqual(composer.getComposition(), "ㄈㄥ");
+
+  // Testing tool functions
+  XCTAssertEqual(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
 }
 
 @end
