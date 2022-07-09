@@ -36,7 +36,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <map>
+#include <numeric>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -1268,6 +1271,53 @@ inline static std::string cnvHanyuPinyinToTextBookStyle(
   return strResult;
 }
 
+/// 該函式負責將注音轉為教科書印刷的方式（先寫輕聲）。
+/// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
+/// @param newSeparator 新的讀音分隔符。
+/// @returns 經過轉換處理的讀音鏈。
+inline static std::string cnvZhuyinChainToTextbookReading(
+    std::string target = "", std::string newSeparator = "-") {
+  std::vector<std::string> arrReturn = {};
+  std::string tempNeta;
+  std::stringstream targetStream(target);
+  while (std::getline(targetStream, tempNeta, '-')) {
+    if (tempNeta.find("˙") != std::string::npos) {
+      tempNeta.pop_back();
+      tempNeta = "˙" + tempNeta;
+    }
+    arrReturn.push_back(tempNeta);
+  }
+  return std::accumulate(arrReturn.begin(), arrReturn.end(), std::string(),
+                         [&newSeparator](const std::string& a,
+                                         const std::string& b) -> std::string {
+                           return a + (a.length() > 0 ? newSeparator : "") + b;
+                         });
+}
+
+/// 該函數用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
+/// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
+/// @param newSeparator 新的讀音分隔符。
+/// @returns 經過轉換處理的讀音鏈。
+inline static std::string restoreToneOneInZhuyinKey(
+    std::string target = "", std::string newSeparator = "-") {
+  std::vector<std::string> arrReturn = {};
+  std::string tempNeta;
+  std::stringstream targetStream(target);
+  while (std::getline(targetStream, tempNeta, '-')) {
+    if (tempNeta.find("ˊ") == std::string::npos &&
+        tempNeta.find("ˇ") == std::string::npos &&
+        tempNeta.find("ˋ") == std::string::npos &&
+        tempNeta.find("˙") == std::string::npos)
+      tempNeta = tempNeta + "1";
+    arrReturn.push_back(tempNeta);
+  }
+  return std::accumulate(arrReturn.begin(), arrReturn.end(), std::string(),
+                         [&newSeparator](const std::string& a,
+                                         const std::string& b) -> std::string {
+                           return a + (a.length() > 0 ? newSeparator : "") + b;
+                         });
+}
+
 // ========================================================================
 // ======================== REAL THINGS BEGIN HERE ========================
 // ========================================================================
@@ -1371,9 +1421,8 @@ class Composer {
     } else {  // 注音輸出的場合
       std::string valReturnZhuyin = value();
       replaceOccurrences(valReturnZhuyin, " ", "");
-      if (isTextBookStyle && valReturnZhuyin.find("˙") != std::string::npos) {
-        valReturnZhuyin.pop_back();
-        valReturnZhuyin = "˙" + valReturnZhuyin;
+      if (isTextBookStyle) {
+        valReturnZhuyin = cnvZhuyinChainToTextbookReading(valReturnZhuyin);
       }
       // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
       // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。
@@ -1713,7 +1762,6 @@ class Composer {
   /// 倚天/許氏鍵盤/酷音大千二十六鍵的處理函式會代為處理分配過程，此時回傳結果可能為空字串。
   ///
   /// @param key 傳入的 String 訊號。
-
   std::string translate(std::string key) {
     switch (parser) {
       case ofDachen:

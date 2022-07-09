@@ -140,6 +140,9 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(), "ㄇㄥ");
   composer.receiveKey("z");
   ASSERT_EQ(composer.getComposition(), "ㄈㄥ");
+
+  // Testing tool functions
+  ASSERT_EQ(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
 }
 
 // =========== PINYIN TYPINNG HANDLING TESTS ===========
