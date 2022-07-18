@@ -27,7 +27,7 @@
 
 /* Begin PBXFileReference section */
 		5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Intermediate.mm; sourceTree = "<group>"; };
-		5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Basic.mm; sourceTree = "<group>"; };
+		5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Basic.mm; sourceTree = "<group>"; };
 		5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Advanced.mm; sourceTree = "<group>"; };
 		5B6C78CA28578A83001AA4D1 /* Tekkon.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = Tekkon.hh; sourceTree = "<group>"; };
 		5B6C78DA285792C9001AA4D1 /* TekkonCCTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TekkonCCTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };

@@ -1282,6 +1282,8 @@ inline static std::string cnvZhuyinChainToTextbookReading(
   std::stringstream targetStream(target);
   while (std::getline(targetStream, tempNeta, '-')) {
     if (tempNeta.find("˙") != std::string::npos) {
+      // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
+      tempNeta.pop_back();
       tempNeta.pop_back();
       tempNeta = "˙" + tempNeta;
     }
@@ -1294,7 +1296,7 @@ inline static std::string cnvZhuyinChainToTextbookReading(
                          });
 }
 
-/// 該函數用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
+/// 該函式用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
 /// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
 /// @param newSeparator 新的讀音分隔符。
 /// @returns 經過轉換處理的讀音鏈。

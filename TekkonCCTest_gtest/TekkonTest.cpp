@@ -143,6 +143,7 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
 
   // Testing tool functions
   ASSERT_EQ(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  ASSERT_EQ(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),"ㄊㄧㄥ-˙ㄓㄜ");
 }
 
 // =========== PINYIN TYPINNG HANDLING TESTS ===========

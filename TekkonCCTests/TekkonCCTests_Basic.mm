@@ -153,6 +153,7 @@ using namespace Tekkon;
 
   // Testing tool functions
   XCTAssertEqual(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  XCTAssertEqual(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),"ㄊㄧㄥ-˙ㄓㄜ");
 }
 
 @end
