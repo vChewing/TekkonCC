@@ -1294,7 +1294,7 @@ inline static std::string cnvZhuyinChainToTextbookReading(
                          });
 }
 
-/// 該函數用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
+/// 該函式用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
 /// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
 /// @param newSeparator 新的讀音分隔符。
 /// @returns 經過轉換處理的讀音鏈。
