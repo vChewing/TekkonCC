@@ -1414,11 +1414,6 @@ class Composer {
       std::string valReturnPinyin = cnvPhonaToHanyuPinyin(value());
       if (isTextBookStyle)
         valReturnPinyin = cnvHanyuPinyinToTextBookStyle(valReturnPinyin);
-      // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
-      // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。
-      if (valReturnPinyin.back() == '\xCB') {
-        valReturnPinyin.pop_back();
-      }
       return valReturnPinyin;
     } else {  // 注音輸出的場合
       std::string valReturnZhuyin = value();
