@@ -1282,6 +1282,8 @@ inline static std::string cnvZhuyinChainToTextbookReading(
   std::stringstream targetStream(target);
   while (std::getline(targetStream, tempNeta, '-')) {
     if (tempNeta.find("˙") != std::string::npos) {
+      // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
+      tempNeta.pop_back();
       tempNeta.pop_back();
       tempNeta = "˙" + tempNeta;
     }
