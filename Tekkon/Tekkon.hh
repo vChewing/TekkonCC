@@ -1320,6 +1320,32 @@ inline static std::string restoreToneOneInZhuyinKey(
                          });
 }
 
+inline static std::string cnvHanyuPinyinToPhona(std::string target = "") {
+  std::string strResult = std::move(target);
+  std::vector<std::string> keyListHYPY;
+  for (auto const& i : mapHanyuPinyin) keyListHYPY.push_back(i.first);
+  std::sort(keyListHYPY.begin(), keyListHYPY.end(),
+            [](const std::string& first, const std::string& second) {
+              return first.size() > second.size();
+            });
+
+  std::vector<std::string> keyListIntonation;
+  for (auto const& i : mapArayuruPinyinIntonation)
+    keyListIntonation.push_back(i.first);
+  std::sort(keyListIntonation.begin(), keyListIntonation.end(),
+            [](const std::string& first, const std::string& second) {
+              return first.size() > second.size();
+            });
+
+  for (auto i : keyListHYPY) {
+    replaceOccurrences(strResult, i, mapHanyuPinyin[i]);
+  }
+  for (auto i : keyListIntonation) {
+    replaceOccurrences(strResult, i, mapArayuruPinyinIntonation[i]);
+  }
+  return strResult;
+}
+
 // ========================================================================
 // ======================== REAL THINGS BEGIN HERE ========================
 // ========================================================================
@@ -1394,6 +1420,9 @@ class Composer {
 
   /// 注音排列種類。預設情況下是大千排列（Windows / macOS 預設注音排列）。
   MandarinParser parser = ofDachen;
+
+  /// 是否對錯誤的注音讀音組合做出自動糾正處理。
+  bool phonabetCombinationCorrectionEnabled;
 
   /// 內容值，會直接按照正確的順序拼裝自己的聲介韻調內容、再回傳。
   /// 注意：直接取這個參數的內容的話，陰平聲調會成為一個空格。
@@ -1494,7 +1523,10 @@ class Composer {
   ///
   /// @param input 傳入的 String 內容，用以處理單個字符。
   /// @param arrange 要使用的注音排列。
-  explicit Composer(std::string input = "", MandarinParser arrange = ofDachen) {
+  /// @param correction 是否對錯誤的注音讀音組合做出自動糾正處理。
+  explicit Composer(std::string input = "", MandarinParser arrange = ofDachen,
+                    bool correction = false) {
+    phonabetCombinationCorrectionEnabled = correction;
     romajiBuffer = "";
     ensureParser(arrange);
     receiveKey(input);
@@ -1598,6 +1630,14 @@ class Composer {
   void receiveKeyFromPhonabet(std::string phonabet = "") {
     Phonabet thePhone = Phonabet(phonabet);
     switch (hashify(phonabet.c_str())) {
+      case hashify("ㄧ"):
+      case hashify("ㄩ"):
+        if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
+        break;
+      case hashify("ㄜ"):
+        if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
+          thePhone = Phonabet("ㄝ");
+        break;
       case hashify("ㄛ"):
       case hashify("ㄥ"):
         if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
@@ -1605,10 +1645,18 @@ class Composer {
             semivowel.value() == "ㄨ")
           semivowel.clear();
         break;
+      case hashify("ㄟ"):
+        if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
+            (semivowel.value() == "ㄨ"))
+          semivowel.clear();
+        break;
       case hashify("ㄨ"):
         if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
              consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
             (vowel.value() == "ㄛ" || vowel.value() == "ㄥ"))
+          vowel.clear();
+        if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
+            (vowel.value() == "ㄟ"))
           vowel.clear();
         break;
       case hashify("ㄅ"):

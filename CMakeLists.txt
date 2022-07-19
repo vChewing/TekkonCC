@@ -3,7 +3,7 @@ project(Tekkon)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(TekkonLib Tekkon/Tekkon.hh Tekkon/main.cpp)
+add_library(TekkonLib Tekkon/Tekkon.hh Tekkon/main.cc)
 
 # Let CMake fetch Google Test for us.
 # https://gitee.com/mirrors/googletest/tree/main/googletest#incorporating-into-an-existing-cmake-project
@@ -19,7 +19,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Test target declarations.
-add_executable(TekkonTest TekkonCCTest_gtest/TekkonTest.cpp)
+add_executable(TekkonTest TekkonCCTest_gtest/TekkonTest.cc)
 target_link_libraries(TekkonTest gtest_main TekkonLib)
 include(GoogleTest)
 gtest_discover_tests(TekkonTest)

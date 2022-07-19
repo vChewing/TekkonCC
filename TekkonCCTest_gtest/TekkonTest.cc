@@ -1,4 +1,4 @@
-// Copyright (c) 2022 and onwards Lukhnos Liu
+// (c) 2022 and onwards The vChewing Project (MIT-NTL License).
 //
 // Permission is hereby granted, free of charge, to any person
 // obtaining a copy of this software and associated documentation
@@ -115,6 +115,9 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   toneMarkerIndicator = composer.hasToneMarker(true);
   ASSERT_TRUE(toneMarkerIndicator);
 
+  // Testing auto phonabet combination fixing process.
+  composer.phonabetCombinationCorrectionEnabled = true;
+
   // Testing exceptions of handling "ㄅㄨㄛ ㄆㄨㄛ ㄇㄨㄛ ㄈㄨㄛ"
   composer.clear();
   composer.receiveKey("1");
@@ -141,9 +144,35 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   composer.receiveKey("z");
   ASSERT_EQ(composer.getComposition(), "ㄈㄥ");
 
+  // Testing exceptions of handling "ㄋㄨㄟ ㄌㄨㄟ"
+  composer.clear();
+  composer.receiveKey("s");
+  composer.receiveKey("j");
+  composer.receiveKey("o");
+  ASSERT_EQ(composer.getComposition(), "ㄋㄟ");
+  composer.receiveKey("x");
+  ASSERT_EQ(composer.getComposition(), "ㄌㄟ");
+
+  // Testing exceptions of handling "ㄧㄜ ㄩㄜ"
+  composer.clear();
+  composer.receiveKey("s");
+  composer.receiveKey("k");
+  composer.receiveKey("u");
+  ASSERT_EQ(composer.getComposition(), "ㄋㄧㄝ");
+  composer.receiveKey("s");
+  composer.receiveKey("m");
+  composer.receiveKey("k");
+  ASSERT_EQ(composer.getComposition(), "ㄋㄩㄝ");
+  composer.receiveKey("s");
+  composer.receiveKey("u");
+  composer.receiveKey("k");
+  ASSERT_EQ(composer.getComposition(), "ㄋㄧㄝ");
+
   // Testing tool functions
   ASSERT_EQ(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
-  ASSERT_EQ(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),"ㄊㄧㄥ-˙ㄓㄜ");
+  ASSERT_EQ(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
+            "ㄊㄧㄥ-˙ㄓㄜ");
+  ASSERT_EQ(Tekkon::cnvHanyuPinyinToPhona("jing3-gao4"), "ㄐㄧㄥˇ-ㄍㄠˋ");
 }
 
 // =========== PINYIN TYPINNG HANDLING TESTS ===========
