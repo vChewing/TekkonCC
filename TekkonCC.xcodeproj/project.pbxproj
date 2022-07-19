@@ -10,7 +10,7 @@
 		5B07925E285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */; };
 		5B304FD728585B2A00696C3A /* TekkonCCTests_Basic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */; };
 		5B304FD928585B3100696C3A /* TekkonCCTests_Advanced.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */; };
-		5BF7D5E02857898200BD81A6 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5BF7D5DF2857898200BD81A6 /* main.cpp */; };
+		5BF7D5E02857898200BD81A6 /* main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 5BF7D5DF2857898200BD81A6 /* main.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -27,12 +27,12 @@
 
 /* Begin PBXFileReference section */
 		5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Intermediate.mm; sourceTree = "<group>"; };
-		5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Basic.mm; sourceTree = "<group>"; };
+		5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Basic.mm; sourceTree = "<group>"; };
 		5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Advanced.mm; sourceTree = "<group>"; };
 		5B6C78CA28578A83001AA4D1 /* Tekkon.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = Tekkon.hh; sourceTree = "<group>"; };
 		5B6C78DA285792C9001AA4D1 /* TekkonCCTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TekkonCCTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BF7D5DC2857898200BD81A6 /* TekkonCC */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TekkonCC; sourceTree = BUILT_PRODUCTS_DIR; };
-		5BF7D5DF2857898200BD81A6 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		5BF7D5DF2857898200BD81A6 /* main.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,7 +84,7 @@
 		5BF7D5DE2857898200BD81A6 /* Tekkon */ = {
 			isa = PBXGroup;
 			children = (
-				5BF7D5DF2857898200BD81A6 /* main.cpp */,
+				5BF7D5DF2857898200BD81A6 /* main.cc */,
 				5B6C78CA28578A83001AA4D1 /* Tekkon.hh */,
 			);
 			path = Tekkon;
@@ -188,7 +188,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5BF7D5E02857898200BD81A6 /* main.cpp in Sources */,
+				5BF7D5E02857898200BD81A6 /* main.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,7 +198,6 @@
 		5B6C78DE285792C9001AA4D1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -214,7 +213,6 @@
 		5B6C78DF285792C9001AA4D1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -233,7 +231,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -290,7 +288,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;

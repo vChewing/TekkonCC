@@ -125,6 +125,9 @@ using namespace Tekkon;
   toneMarkerIndicator = composer.hasToneMarker(true);
   XCTAssertTrue(toneMarkerIndicator);
 
+  // Testing auto phonabet combination fixing process.
+  composer.phonabetCombinationCorrectionEnabled = true;
+
   // Testing exceptions of handling "ㄅㄨㄛ ㄆㄨㄛ ㄇㄨㄛ ㄈㄨㄛ"
   composer.clear();
   composer.receiveKey("1");
@@ -150,6 +153,36 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄇㄥ");
   composer.receiveKey("z");
   XCTAssertEqual(composer.getComposition(), "ㄈㄥ");
+
+  // Testing exceptions of handling "ㄋㄨㄟ ㄌㄨㄟ"
+  composer.clear();
+  composer.receiveKey("s");
+  composer.receiveKey("j");
+  composer.receiveKey("o");
+  XCTAssertEqual(composer.getComposition(), "ㄋㄟ");
+  composer.receiveKey("x");
+  XCTAssertEqual(composer.getComposition(), "ㄌㄟ");
+
+  // Testing exceptions of handling "ㄧㄜ ㄩㄜ"
+  composer.clear();
+  composer.receiveKey("s");
+  composer.receiveKey("k");
+  composer.receiveKey("u");
+  XCTAssertEqual(composer.getComposition(), "ㄋㄧㄝ");
+  composer.receiveKey("s");
+  composer.receiveKey("m");
+  composer.receiveKey("k");
+  XCTAssertEqual(composer.getComposition(), "ㄋㄩㄝ");
+  composer.receiveKey("s");
+  composer.receiveKey("u");
+  composer.receiveKey("k");
+  XCTAssertEqual(composer.getComposition(), "ㄋㄧㄝ");
+
+  // Testing tool functions
+  XCTAssertEqual(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  XCTAssertEqual(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
+                 "ㄊㄧㄥ-˙ㄓㄜ");
+  XCTAssertEqual(Tekkon::cnvHanyuPinyinToPhona("jing3-gao4"), "ㄐㄧㄥˇ-ㄍㄠˋ");
 }
 
 @end
