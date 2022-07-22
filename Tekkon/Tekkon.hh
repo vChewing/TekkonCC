@@ -1320,7 +1320,12 @@ inline static std::string restoreToneOneInZhuyinKey(
                          });
 }
 
-inline static std::string cnvHanyuPinyinToPhona(std::string target = "") {
+/// 該函式用來將漢語拼音轉為注音。
+/// @param target 要轉換的漢語拼音內容，要求必須帶有 12345 數字標調。
+/// @param newToneOne 對陰平指定新的標記。預設情況下該標記為空字串。
+/// @returns 轉換結果。
+inline static std::string cnvHanyuPinyinToPhona(std::string target = "",
+                                                std::string newToneOne = "") {
   std::string strResult = std::move(target);
   std::vector<std::string> keyListHYPY;
   for (auto const& i : mapHanyuPinyin) keyListHYPY.push_back(i.first);
@@ -1341,7 +1346,8 @@ inline static std::string cnvHanyuPinyinToPhona(std::string target = "") {
     replaceOccurrences(strResult, i, mapHanyuPinyin[i]);
   }
   for (auto i : keyListIntonation) {
-    replaceOccurrences(strResult, i, mapArayuruPinyinIntonation[i]);
+    replaceOccurrences(strResult, i,
+                       i == "1" ? newToneOne : mapArayuruPinyinIntonation[i]);
   }
   return strResult;
 }

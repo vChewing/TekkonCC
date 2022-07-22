@@ -182,7 +182,8 @@ using namespace Tekkon;
   XCTAssertEqual(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   XCTAssertEqual(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
                  "ㄊㄧㄥ-˙ㄓㄜ");
-  XCTAssertEqual(Tekkon::cnvHanyuPinyinToPhona("jing3-gao4"), "ㄐㄧㄥˇ-ㄍㄠˋ");
+  XCTAssertEqual(Tekkon::cnvHanyuPinyinToPhona("bian4-le5-tian1"),
+                 "ㄅㄧㄢˋ-ㄌㄜ˙-ㄊㄧㄢ");
 }
 
 @end
