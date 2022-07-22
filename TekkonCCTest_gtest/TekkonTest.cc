@@ -173,7 +173,8 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   ASSERT_EQ(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   ASSERT_EQ(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
             "ㄊㄧㄥ-˙ㄓㄜ");
-  ASSERT_EQ(Tekkon::cnvHanyuPinyinToPhona("jing3-gao4"), "ㄐㄧㄥˇ-ㄍㄠˋ");
+  ASSERT_EQ(Tekkon::cnvHanyuPinyinToPhona("bian4-le5-tian1"),
+            "ㄅㄧㄢˋ-ㄌㄜ˙-ㄊㄧㄢ");
 }
 
 // =========== PINYIN TYPINNG HANDLING TESTS ===========
