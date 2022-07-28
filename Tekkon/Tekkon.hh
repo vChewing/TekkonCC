@@ -140,6 +140,7 @@ enum MandarinParser : int {
   ofMiTAC = 6,
   ofSeigyou = 7,
   ofFakeSeigyou = 8,
+  ofStarlight = 9,
   ofHanyuPinyin = 100,
   ofSecondaryPinyin = 101,
   ofYalePinyin = 102,
@@ -1166,6 +1167,20 @@ inline static std::map<std::string, std::string> mapHsuStaticKeys = {
     {"v", "ㄔ"}, {"w", "ㄠ"}, {"x", "ㄨ"}, {"y", "ㄚ"}, {"z", "ㄗ"},
     {" ", " "}};
 
+/// 星光排列專用處理陣列，但未包含全部的映射內容。
+///
+/// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
+/// 這裡提前對複音按鍵做處理，然後再用程式判斷介母類型、
+/// 據此判斷是否需要做複音切換。
+inline static std::map<std::string, std::string> mapStarlightStaticKeys = {
+    {"a", "ㄚ"}, {"b", "ㄅ"}, {"c", "ㄘ"}, {"d", "ㄉ"}, {"e", "ㄜ"},
+    {"f", "ㄈ"}, {"g", "ㄍ"}, {"h", "ㄏ"}, {"i", "ㄧ"}, {"j", "ㄓ"},
+    {"k", "ㄎ"}, {"l", "ㄌ"}, {"m", "ㄇ"}, {"n", "ㄋ"}, {"o", "ㄛ"},
+    {"p", "ㄆ"}, {"q", "ㄔ"}, {"r", "ㄖ"}, {"s", "ㄙ"}, {"t", "ㄊ"},
+    {"u", "ㄨ"}, {"v", "ㄩ"}, {"w", "ㄡ"}, {"x", "ㄕ"}, {"y", "ㄞ"},
+    {"z", "ㄗ"}, {" ", " "},  {"6", " "},  {"7", "ˊ"},  {"8", "ˇ"},
+    {"9", "ˋ"},  {"0", "˙"}};
+
 /// 倚天忘形排列預處理專用陣列，但未包含全部的映射內容。
 ///
 /// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
@@ -1578,6 +1593,9 @@ class Composer {
         return mapSeigyou.find(inputKey) != mapSeigyou.end();
       case ofFakeSeigyou:
         return mapFakeSeigyou.find(inputKey) != mapFakeSeigyou.end();
+      case ofStarlight:
+        return mapStarlightStaticKeys.find(inputKey) !=
+               mapStarlightStaticKeys.end();
       case ofHanyuPinyin:
       case ofSecondaryPinyin:
       case ofYalePinyin:
@@ -1635,46 +1653,54 @@ class Composer {
   /// @param phonabet 傳入的單個注音符號字串。
   void receiveKeyFromPhonabet(std::string phonabet = "") {
     Phonabet thePhone = Phonabet(phonabet);
-    switch (hashify(phonabet.c_str())) {
-      case hashify("ㄧ"):
-      case hashify("ㄩ"):
-        if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
-        break;
-      case hashify("ㄜ"):
-        if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
-          thePhone = Phonabet("ㄝ");
-        break;
-      case hashify("ㄛ"):
-      case hashify("ㄥ"):
-        if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
-             consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
-            semivowel.value() == "ㄨ")
-          semivowel.clear();
-        break;
-      case hashify("ㄟ"):
-        if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
-            (semivowel.value() == "ㄨ"))
-          semivowel.clear();
-        break;
-      case hashify("ㄨ"):
-        if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
-             consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
-            (vowel.value() == "ㄛ" || vowel.value() == "ㄥ"))
-          vowel.clear();
-        if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
-            (vowel.value() == "ㄟ"))
-          vowel.clear();
-        break;
-      case hashify("ㄅ"):
-      case hashify("ㄆ"):
-      case hashify("ㄇ"):
-      case hashify("ㄈ"):
-        if (semivowel.value() + vowel.value() == "ㄨㄛ" ||
-            semivowel.value() + vowel.value() == "ㄨㄥ")
-          semivowel.clear();
-        break;
-      default:
-        break;
+    if (phonabetCombinationCorrectionEnabled) {
+      switch (hashify(phonabet.c_str())) {
+        case hashify("ㄧ"):
+        case hashify("ㄩ"):
+          if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
+          break;
+        case hashify("ㄜ"):
+          if (semivowel.value() == "ㄨ") semivowel = Phonabet("ㄩ");
+          if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
+            thePhone = Phonabet("ㄝ");
+          break;
+        case hashify("ㄝ"):
+          if (semivowel.value() == "ㄨ") semivowel = Phonabet("ㄩ");
+          break;
+        case hashify("ㄛ"):
+        case hashify("ㄥ"):
+          if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
+               consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
+              semivowel.value() == "ㄨ")
+            semivowel.clear();
+          break;
+        case hashify("ㄟ"):
+          if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
+              (semivowel.value() == "ㄨ"))
+            semivowel.clear();
+          break;
+        case hashify("ㄨ"):
+          if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
+               consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
+              (vowel.value() == "ㄛ" || vowel.value() == "ㄥ"))
+            vowel.clear();
+          if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
+              (vowel.value() == "ㄟ"))
+            vowel.clear();
+          if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
+          if (vowel.value() == "ㄝ") thePhone = Phonabet("ㄩ");
+          break;
+        case hashify("ㄅ"):
+        case hashify("ㄆ"):
+        case hashify("ㄇ"):
+        case hashify("ㄈ"):
+          if (semivowel.value() + vowel.value() == "ㄨㄛ" ||
+              semivowel.value() + vowel.value() == "ㄨㄥ")
+            semivowel.clear();
+          break;
+        default:
+          break;
+      }
     }
     switch (thePhone.type) {
       case PhoneType::consonant:
@@ -1835,6 +1861,8 @@ class Composer {
         return mapSeigyou.count(key) ? mapSeigyou[key] : "";
       case ofFakeSeigyou:
         return mapFakeSeigyou.count(key) ? mapFakeSeigyou[key] : "";
+      case ofStarlight:
+        return handleStarlight(key);
       case ofHanyuPinyin:
       case ofSecondaryPinyin:
       case ofYalePinyin:
@@ -1849,7 +1877,7 @@ class Composer {
   ///
   /// 回傳結果是空字串的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
-  ///  @param key 傳入的 std::string 訊號。
+  /// @param key 傳入的 std::string 訊號。
   std::string handleETen26(std::string key) {
     std::string strReturn =
         (mapETen26StaticKeys.count(key)) ? mapETen26StaticKeys[key] : "";
@@ -1879,7 +1907,6 @@ class Composer {
           consonant = Phonabet("ㄎ");
         else
           intonation = Phonabet("ˋ");
-
         break;
       case hashify("h"):
         if (consonant.isEmpty() && semivowel.isEmpty())
@@ -1938,58 +1965,8 @@ class Composer {
         break;
     }
 
-    // 處理「一個按鍵對應兩個聲母」的情形。
-    if (!consonant.isEmpty() && incomingPhonabet.type == PhoneType::semivowel) {
-      switch (hashify(consonant.value().c_str())) {
-        case hashify("ㄍ"):
-          switch (hashify(incomingPhonabet.value().c_str())) {
-            case hashify("ㄧ"):
-              consonant = Phonabet("ㄑ");
-              break;  // ㄑㄧ
-            case hashify("ㄨ"):
-              consonant = Phonabet("ㄍ");
-              break;  // ㄍㄨ
-            case hashify("ㄩ"):
-              consonant = Phonabet("ㄑ");
-              break;  // ㄑㄩ
-            default:
-              break;
-          }
-          break;
-        case hashify("ㄓ"):
-          switch (hashify(incomingPhonabet.value().c_str())) {
-            case hashify("ㄧ"):
-              consonant = Phonabet("ㄐ");
-              break;  // ㄐㄧ
-            case hashify("ㄨ"):
-              consonant = Phonabet("ㄓ");
-              break;  // ㄓㄨ
-            case hashify("ㄩ"):
-              consonant = Phonabet("ㄐ");
-              break;  // ㄐㄩ
-            default:
-              break;
-          }
-          break;
-        case hashify("ㄕ"):
-          switch (hashify(incomingPhonabet.value().c_str())) {
-            case hashify("ㄧ"):
-              consonant = Phonabet("ㄒ");
-              break;  // ㄒㄧ
-            case hashify("ㄨ"):
-              consonant = Phonabet("ㄕ");
-              break;  // ㄕㄨ
-            case hashify("ㄩ"):
-              consonant = Phonabet("ㄒ");
-              break;  // ㄒㄩ
-            default:
-              break;
-          }
-          break;
-        default:
-          break;
-      }
-    }
+    // 處理特殊情形。
+    commonFixWhenHandlingDynamicArrangeInputs(incomingPhonabet);
 
     if (std::string("dfjk ").find(key, 0) != std::string::npos &&
         !consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty()) {
@@ -2016,7 +1993,7 @@ class Composer {
   ///
   /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
-  ///  @param key 傳入的 std::string 訊號。
+  /// @param key 傳入的 std::string 訊號。
   std::string handleHsu(std::string key) {
     std::string strReturn =
         (mapHsuStaticKeys.count(key)) ? mapHsuStaticKeys[key] : "";
@@ -2132,87 +2109,7 @@ class Composer {
     }
 
     // 處理特殊情形。
-    switch (incomingPhonabet.type) {
-      case PhoneType::semivowel:
-        switch (hashify(consonant.value().c_str())) {
-          case hashify("ㄍ"):  // 許氏鍵盤應該也需要這個自動糾正
-            switch (hashify(incomingPhonabet.value().c_str())) {
-              case hashify("ㄧ"):
-                consonant = Phonabet("ㄑ");
-                break;  // ㄑㄧ
-              case hashify("ㄨ"):
-                consonant = Phonabet("ㄍ");
-                break;  // ㄍㄨ
-              case hashify("ㄩ"):
-                consonant = Phonabet("ㄑ");
-                break;  // ㄑㄩ
-              default:
-                break;
-            }
-            break;
-          case hashify("ㄓ"):
-            if (intonation.isEmpty()) {
-              switch (hashify(incomingPhonabet.value().c_str())) {
-                case hashify("ㄧ"):
-                  consonant = Phonabet("ㄐ");
-                  break;  // ㄐㄧ
-                case hashify("ㄨ"):
-                  consonant = Phonabet("ㄓ");
-                  break;  // ㄓㄨ
-                case hashify("ㄩ"):
-                  consonant = Phonabet("ㄐ");
-                  break;  // ㄐㄩ
-                default:
-                  break;
-              }
-            }
-            break;
-          case hashify("ㄔ"):
-            if (intonation.isEmpty()) {
-              switch (hashify(incomingPhonabet.value().c_str())) {
-                case hashify("ㄧ"):
-                  consonant = Phonabet("ㄑ");
-                  break;  // ㄐㄧ
-                case hashify("ㄨ"):
-                  consonant = Phonabet("ㄔ");
-                  break;  // ㄓㄨ
-                case hashify("ㄩ"):
-                  consonant = Phonabet("ㄑ");
-                  break;  // ㄐㄩ
-                default:
-                  break;
-              }
-            }
-            break;
-          case hashify("ㄕ"):
-            switch (hashify(incomingPhonabet.value().c_str())) {
-              case hashify("ㄧ"):
-                consonant = Phonabet("ㄒ");
-                break;  // ㄒㄧ
-              case hashify("ㄨ"):
-                consonant = Phonabet("ㄕ");
-                break;  // ㄕㄨ
-              case hashify("ㄩ"):
-                consonant = Phonabet("ㄒ");
-                break;  // ㄒㄩ
-              default:
-                break;
-            }
-            break;
-          default:
-            break;
-        }
-        break;
-      case PhoneType::vowel:
-        if (semivowel.isEmpty() && !consonant.isEmpty()) {
-          consonant.selfReplace("ㄐ", "ㄓ");
-          consonant.selfReplace("ㄑ", "ㄔ");
-          consonant.selfReplace("ㄒ", "ㄕ");
-        }
-        break;
-      default:
-        break;
-    }
+    commonFixWhenHandlingDynamicArrangeInputs(incomingPhonabet);
 
     if (std::string("dfjs ").find(key, 0) != std::string::npos) {
       if (!consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty()) {
@@ -2257,11 +2154,66 @@ class Composer {
     return strReturn;
   }
 
+  /// 星光鍵盤與倚天忘形一樣同樣也比較麻煩，需要單獨處理。
+  ///
+  /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
+  ///
+  /// @param key 傳入的 std::string 訊號。
+  std::string handleStarlight(std::string key) {
+    std::string strReturn =
+        (mapStarlightStaticKeys.count(key)) ? mapStarlightStaticKeys[key] : "";
+    Phonabet incomingPhonabet = Phonabet(strReturn);
+
+    switch (hashify(key.c_str())) {
+      case hashify("e"):
+        return (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ") ? "ㄝ"
+                                                                        : "ㄜ";
+      case hashify("f"):
+        return vowel.value() == "ㄠ" || !isPronouncable() ? "ㄈ" : "ㄠ";
+      case hashify("g"):
+        return vowel.value() == "ㄥ" || !isPronouncable() ? "ㄍ" : "ㄥ";
+      case hashify("k"):
+        return vowel.value() == "ㄤ" || !isPronouncable() ? "ㄎ" : "ㄤ";
+      case hashify("l"):
+        return vowel.value() == "ㄦ" || !isPronouncable() ? "ㄌ" : "ㄦ";
+      case hashify("m"):
+        return vowel.value() == "ㄢ" || !isPronouncable() ? "ㄇ" : "ㄢ";
+      case hashify("n"):
+        return vowel.value() == "ㄣ" || !isPronouncable() ? "ㄋ" : "ㄣ";
+      case hashify("t"):
+        return vowel.value() == "ㄟ" || !isPronouncable() ? "ㄊ" : "ㄟ";
+      default:
+        break;
+    }
+
+    // 處理特殊情形。
+    commonFixWhenHandlingDynamicArrangeInputs(incomingPhonabet);
+
+    if (std::string("67890 ").find(key, 0) != std::string::npos) {
+      if (!consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty()) {
+        consonant.selfReplace("ㄈ", "ㄠ");
+        consonant.selfReplace("ㄍ", "ㄥ");
+        consonant.selfReplace("ㄎ", "ㄤ");
+        consonant.selfReplace("ㄌ", "ㄦ");
+        consonant.selfReplace("ㄇ", "ㄢ");
+        consonant.selfReplace("ㄋ", "ㄣ");
+        consonant.selfReplace("ㄊ", "ㄟ");
+      }
+    }
+
+    // 這些按鍵在上文處理過了，就不要再回傳了。;
+    if (std::string("efgklmn").find(key, 0) != std::string::npos)
+      strReturn = "";
+
+    // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
+    return strReturn;
+  }
+
   /// 酷音大千二十六鍵一樣同樣也比較麻煩，需要單獨處理。
   ///
   /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
-  ///  @param key 傳入的 std::string 訊號。
+  /// @param key 傳入的 std::string 訊號。
   std::string handleDachen26(std::string key) {
     std::string strReturn = (mapDachenCP26StaticKeys.count(key))
                                 ? mapDachenCP26StaticKeys[key]
@@ -2311,9 +2263,12 @@ class Composer {
           vowel = Phonabet("ㄤ");
         break;
       case hashify("n"):
-        if (!consonant.isEmpty() || !semivowel.isEmpty())
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) {
+          if (consonant.value() == "ㄙ" && semivowel.isEmpty() &&
+              vowel.isEmpty())
+            consonant.clear();
           vowel = Phonabet("ㄥ");
-        else
+        } else
           consonant = Phonabet("ㄙ");
         break;
       case hashify("o"):
@@ -2355,8 +2310,13 @@ class Composer {
           vowel.clear();
         } else if (!semivowel.isEmpty())
           vowel = Phonabet("ㄡ");
-        else
-          semivowel = Phonabet("ㄩ");
+        else {
+          receiveKeyFromPhonabet(consonant.value() == "ㄐ" ||
+                                         consonant.value() == "ㄑ" ||
+                                         consonant.value() == "ㄒ"
+                                     ? "ㄩ"
+                                     : "ㄡ");
+        }
         break;
       case hashify("u"):
         if (semivowel.value() == "ㄧ" && vowel.value() != "ㄚ") {
@@ -2382,6 +2342,88 @@ class Composer {
 
     // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
+  }
+
+  /// 所有動態注音鍵盤佈局都會用到的共用糾錯處理步驟。
+  /// @param incomingPhonabet 傳入的注音 Phonabet。
+  void commonFixWhenHandlingDynamicArrangeInputs(Phonabet incomingPhonabet) {
+    switch (incomingPhonabet.type) {
+      case PhoneType::semivowel:
+        switch (hashify(consonant.value().c_str())) {
+          case hashify("ㄍ"):
+            switch (hashify(incomingPhonabet.value().c_str())) {
+              case hashify("ㄧ"):
+                consonant = Phonabet("ㄑ");
+                break;  // ㄑㄧ
+              case hashify("ㄨ"):
+                consonant = Phonabet("ㄍ");
+                break;  // ㄍㄨ
+              case hashify("ㄩ"):
+                consonant = Phonabet("ㄑ");
+                break;  // ㄑㄩ
+              default:
+                break;
+            }
+            break;
+          case hashify("ㄓ"):
+            switch (hashify(incomingPhonabet.value().c_str())) {
+              case hashify("ㄧ"):
+                consonant = Phonabet("ㄐ");
+                break;  // ㄐㄧ
+              case hashify("ㄨ"):
+                consonant = Phonabet("ㄓ");
+                break;  // ㄓㄨ
+              case hashify("ㄩ"):
+                consonant = Phonabet("ㄐ");
+                break;  // ㄐㄩ
+              default:
+                break;
+            }
+            break;
+          case hashify("ㄔ"):
+            switch (hashify(incomingPhonabet.value().c_str())) {
+              case hashify("ㄧ"):
+                consonant = Phonabet("ㄑ");
+                break;  // ㄐㄧ
+              case hashify("ㄨ"):
+                consonant = Phonabet("ㄔ");
+                break;  // ㄓㄨ
+              case hashify("ㄩ"):
+                consonant = Phonabet("ㄑ");
+                break;  // ㄐㄩ
+              default:
+                break;
+            }
+            break;
+          case hashify("ㄕ"):
+            switch (hashify(incomingPhonabet.value().c_str())) {
+              case hashify("ㄧ"):
+                consonant = Phonabet("ㄒ");
+                break;  // ㄒㄧ
+              case hashify("ㄨ"):
+                consonant = Phonabet("ㄕ");
+                break;  // ㄕㄨ
+              case hashify("ㄩ"):
+                consonant = Phonabet("ㄒ");
+                break;  // ㄒㄩ
+              default:
+                break;
+            }
+            break;
+          default:
+            break;
+        }
+        break;
+      case PhoneType::vowel:
+        if (semivowel.isEmpty() && !consonant.isEmpty()) {
+          consonant.selfReplace("ㄐ", "ㄓ");
+          consonant.selfReplace("ㄑ", "ㄔ");
+          consonant.selfReplace("ㄒ", "ㄕ");
+        }
+        break;
+      default:
+        break;
+    }
   }
 };
 

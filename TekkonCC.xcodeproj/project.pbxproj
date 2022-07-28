@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		5B07925E285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */; };
+		5B2E9DE32892B67F00E78AE6 /* TekkonCCTest_gtest in Resources */ = {isa = PBXBuildFile; fileRef = 5B2E9DE22892B67F00E78AE6 /* TekkonCCTest_gtest */; };
 		5B304FD728585B2A00696C3A /* TekkonCCTests_Basic.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */; };
 		5B304FD928585B3100696C3A /* TekkonCCTests_Advanced.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */; };
 		5BF7D5E02857898200BD81A6 /* main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 5BF7D5DF2857898200BD81A6 /* main.cc */; };
@@ -27,6 +28,7 @@
 
 /* Begin PBXFileReference section */
 		5B07925D285797BE0009C7B4 /* TekkonCCTests_Intermediate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Intermediate.mm; sourceTree = "<group>"; };
+		5B2E9DE22892B67F00E78AE6 /* TekkonCCTest_gtest */ = {isa = PBXFileReference; lastKnownFileType = folder; path = TekkonCCTest_gtest; sourceTree = "<group>"; };
 		5B304FD628585B2A00696C3A /* TekkonCCTests_Basic.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; lineEnding = 0; path = TekkonCCTests_Basic.mm; sourceTree = "<group>"; };
 		5B304FD828585B3100696C3A /* TekkonCCTests_Advanced.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TekkonCCTests_Advanced.mm; sourceTree = "<group>"; };
 		5B6C78CA28578A83001AA4D1 /* Tekkon.hh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; lineEnding = 0; path = Tekkon.hh; sourceTree = "<group>"; };
@@ -66,6 +68,7 @@
 		5BF7D5D32857898200BD81A6 = {
 			isa = PBXGroup;
 			children = (
+				5B2E9DE22892B67F00E78AE6 /* TekkonCCTest_gtest */,
 				5BF7D5DE2857898200BD81A6 /* Tekkon */,
 				5B6C78DB285792C9001AA4D1 /* TekkonCCTests */,
 				5BF7D5DD2857898200BD81A6 /* Products */,
@@ -168,6 +171,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5B2E9DE32892B67F00E78AE6 /* TekkonCCTest_gtest in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

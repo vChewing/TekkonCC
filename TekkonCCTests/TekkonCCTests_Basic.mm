@@ -178,6 +178,24 @@ using namespace Tekkon;
   composer.receiveKey("k");
   XCTAssertEqual(composer.getComposition(), "ㄋㄧㄝ");
 
+  // Testing exceptions of handling "ㄨㄜ ㄨㄝ"
+  composer.clear();
+  composer.receiveKey("j");
+  composer.receiveKey("k");
+  XCTAssertEqual(composer.getComposition(), "ㄩㄝ");
+  composer.clear();
+  composer.receiveKey("j");
+  composer.receiveKey(",");
+  XCTAssertEqual(composer.getComposition(), "ㄩㄝ");
+  composer.clear();
+  composer.receiveKey(",");
+  composer.receiveKey("j");
+  XCTAssertEqual(composer.getComposition(), "ㄩㄝ");
+  composer.clear();
+  composer.receiveKey("k");
+  composer.receiveKey("j");
+  XCTAssertEqual(composer.getComposition(), "ㄩㄝ");
+
   // Testing tool functions
   XCTAssertEqual(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   XCTAssertEqual(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
