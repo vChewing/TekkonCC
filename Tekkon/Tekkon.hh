@@ -39,6 +39,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <iostream>
 #include <map>
 #include <numeric>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -1342,6 +1343,11 @@ inline static std::string restoreToneOneInZhuyinKey(
 /// @returns 轉換結果。
 inline static std::string cnvHanyuPinyinToPhona(std::string target = "",
                                                 std::string newToneOne = "") {
+  std::regex str_reg(".*[^A-Za-z0-9].*");
+  std::smatch matchResult;
+  if (target.find("_") != std::string::npos ||
+      !std::regex_match(target, matchResult, str_reg))
+    return target;
   std::string strResult = std::move(target);
   std::vector<std::string> keyListHYPY;
   for (auto const& i : mapHanyuPinyin) keyListHYPY.push_back(i.first);
