@@ -52,7 +52,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.vowel.value(), "ㄠ");
 
   // Testing missing tone markers;
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(!toneMarkerIndicator);
 
   composer.receiveKey("3");  // 上聲
@@ -74,17 +74,17 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(false, true), "˙ㄉㄧㄠ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(toneMarkerIndicator);
 }
 
@@ -104,7 +104,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -126,17 +126,17 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(toneMarkerIndicator);
 }
 
@@ -156,7 +156,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -178,17 +178,17 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(toneMarkerIndicator);
 }
 
@@ -208,7 +208,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -230,17 +230,17 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(toneMarkerIndicator);
 }
 
@@ -259,7 +259,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -281,17 +281,17 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(toneMarkerIndicator);
 }
 
