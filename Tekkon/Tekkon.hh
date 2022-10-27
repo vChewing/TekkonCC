@@ -1613,6 +1613,10 @@ class Composer {
     return false;
   }
 
+  void updateRomajiBuffer() {
+    romajiBuffer = Tekkon::cnvPhonaToHanyuPinyin(consonant.value() + semivowel.value() + vowel.value());
+  }
+
   /// 接受傳入的按鍵訊號時的處理，處理對象為 String。
   /// 另有同名函式可處理 UniChar 訊號。
   ///
@@ -1725,6 +1729,7 @@ class Composer {
       default:
         break;
     }
+    updateRomajiBuffer();
   }
 
   /// 處理一連串的按鍵輸入。
@@ -1824,7 +1829,7 @@ class Composer {
   /// 用來檢測是否有調號的函式，預設情況下不判定聲調以外的內容的存無。
   ///
   /// @param withNothingElse 追加判定「槽內是否僅有調號」。
-  bool hasToneMarker(bool withNothingElse = false) {
+  bool hasIntonation(bool withNothingElse = false) {
     return withNothingElse ? (!intonation.isEmpty() && vowel.isEmpty() &&
                               semivowel.isEmpty() && consonant.isEmpty())
                            : !intonation.isEmpty();

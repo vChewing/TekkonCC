@@ -77,7 +77,7 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   composer.receiveKey("l");     // ㄠ
 
   // Testing missing tone markers;
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(!toneMarkerIndicator);
 
   composer.receiveKey("3");  // 上聲
@@ -103,17 +103,17 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
             "˙ㄉㄧㄠ");  // 中階測試項目
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing auto phonabet combination fixing process.
@@ -211,7 +211,7 @@ TEST(TekkonTests_Intermediate, HanyuinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.vowel.value(), "ㄠ");
 
   // Testing missing tone markers;
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(!toneMarkerIndicator);
 
   composer.receiveKey("3");  // 上聲
@@ -233,17 +233,17 @@ TEST(TekkonTests_Intermediate, HanyuinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(false, true), "˙ㄉㄧㄠ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(toneMarkerIndicator);
 }
 
@@ -263,7 +263,7 @@ TEST(TekkonTests_Intermediate, SecondaryPinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -285,17 +285,17 @@ TEST(TekkonTests_Intermediate, SecondaryPinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(toneMarkerIndicator);
 }
 
@@ -315,7 +315,7 @@ TEST(TekkonTests_Intermediate, YalePinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -337,17 +337,17 @@ TEST(TekkonTests_Intermediate, YalePinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(toneMarkerIndicator);
 }
 
@@ -367,7 +367,7 @@ TEST(TekkonTests_Intermediate, HualuoPinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -389,17 +389,17 @@ TEST(TekkonTests_Intermediate, HualuoPinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(toneMarkerIndicator);
 }
 
@@ -418,7 +418,7 @@ TEST(TekkonTests_Intermediate, UniversalPinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.vowel.value(), "ㄥ");
 
   // Testing missing tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(!toneMarkerIndicator);
 
   composer.receiveKey("2");  // 陽平
@@ -440,17 +440,17 @@ TEST(TekkonTests_Intermediate, UniversalPinyinKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(false, true), "˙ㄑㄩㄥ");
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   ASSERT_TRUE(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   ASSERT_TRUE(toneMarkerIndicator);
 }
 

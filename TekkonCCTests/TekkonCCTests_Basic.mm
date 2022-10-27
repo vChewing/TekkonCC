@@ -86,7 +86,7 @@ using namespace Tekkon;
   composer.receiveKey("l");     // ㄠ
 
   // Testing missing tone markers;
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(!toneMarkerIndicator);
 
   composer.receiveKey("3");  // 上聲
@@ -112,17 +112,17 @@ using namespace Tekkon;
                  "˙ㄉㄧㄠ");  // 中階測試項目
 
   // Testing having tone markers
-  toneMarkerIndicator = composer.hasToneMarker();
+  toneMarkerIndicator = composer.hasIntonation();
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing having not-only tone markers
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(!toneMarkerIndicator);
 
   // Testing having only tone markers
   composer.clear();
   composer.receiveKey("3");  // 上聲
-  toneMarkerIndicator = composer.hasToneMarker(true);
+  toneMarkerIndicator = composer.hasIntonation(true);
   XCTAssertTrue(toneMarkerIndicator);
 
   // Testing auto phonabet combination fixing process.
