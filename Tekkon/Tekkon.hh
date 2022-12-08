@@ -1266,9 +1266,9 @@ inline static std::vector<MandarinParser> arrPinyinParsers = {
 
 /// 注音轉拼音，要求陰平必須是空格。
 ///
-/// @param target 傳入的 String 對象物件。
-inline static std::string cnvPhonaToHanyuPinyin(std::string target = "") {
-  std::string strResult = std::move(target);
+/// @param targetJoined 傳入的 String 對象物件。
+inline static std::string cnvPhonaToHanyuPinyin(std::string targetJoined = "") {
+  std::string strResult = std::move(targetJoined);
   for (std::vector<std::string> i : arrPhonaToHanyuPinyin) {
     replaceOccurrences(strResult, i[0], i[1]);
   }
@@ -1277,10 +1277,10 @@ inline static std::string cnvPhonaToHanyuPinyin(std::string target = "") {
 
 /// 漢語拼音數字標調式轉漢語拼音教科書格式，要求陰平必須是數字 1。
 ///
-/// @param target 傳入的 String 對象物件。
+/// @param targetJoined 傳入的 String 對象物件。
 inline static std::string cnvHanyuPinyinToTextBookStyle(
-    std::string target = "") {
-  std::string strResult = std::move(target);
+    std::string targetJoined = "") {
+  std::string strResult = std::move(targetJoined);
   for (std::vector<std::string> i :
        arrHanyuPinyinTextbookStyleConversionTable) {
     replaceOccurrences(strResult, i[0], i[1]);
@@ -1289,14 +1289,14 @@ inline static std::string cnvHanyuPinyinToTextBookStyle(
 }
 
 /// 該函式負責將注音轉為教科書印刷的方式（先寫輕聲）。
-/// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
+/// @param targetJoined 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
 /// @param newSeparator 新的讀音分隔符。
 /// @returns 經過轉換處理的讀音鏈。
 inline static std::string cnvZhuyinChainToTextbookReading(
-    std::string target = "", std::string newSeparator = "-") {
+    std::string targetJoined = "", std::string newSeparator = "-") {
   std::vector<std::string> arrReturn = {};
   std::string tempNeta;
-  std::stringstream targetStream(target);
+  std::stringstream targetStream(targetJoined);
   while (std::getline(targetStream, tempNeta, '-')) {
     if (tempNeta.find("˙") != std::string::npos) {
       // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
@@ -1314,14 +1314,14 @@ inline static std::string cnvZhuyinChainToTextbookReading(
 }
 
 /// 該函式用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
-/// @param target 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
+/// @param targetJoined 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
 /// @param newSeparator 新的讀音分隔符。
 /// @returns 經過轉換處理的讀音鏈。
 inline static std::string restoreToneOneInZhuyinKey(
-    std::string target = "", std::string newSeparator = "-") {
+    std::string targetJoined = "", std::string newSeparator = "-") {
   std::vector<std::string> arrReturn = {};
   std::string tempNeta;
-  std::stringstream targetStream(target);
+  std::stringstream targetStream(targetJoined);
   while (std::getline(targetStream, tempNeta, '-')) {
     if (tempNeta.find("ˊ") == std::string::npos &&
         tempNeta.find("ˇ") == std::string::npos &&
@@ -1338,17 +1338,17 @@ inline static std::string restoreToneOneInZhuyinKey(
 }
 
 /// 該函式用來將漢語拼音轉為注音。
-/// @param target 要轉換的漢語拼音內容，要求必須帶有 12345 數字標調。
+/// @param targetJoined 要轉換的漢語拼音內容，要求必須帶有 12345 數字標調。
 /// @param newToneOne 對陰平指定新的標記。預設情況下該標記為空字串。
 /// @returns 轉換結果。
-inline static std::string cnvHanyuPinyinToPhona(std::string target = "",
+inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
                                                 std::string newToneOne = "") {
   std::regex str_reg(".*[^A-Za-z0-9].*");
   std::smatch matchResult;
-  if (target.find("_") != std::string::npos ||
-      !std::regex_match(target, matchResult, str_reg))
-    return target;
-  std::string strResult = std::move(target);
+  if (targetJoined.find("_") != std::string::npos ||
+      !std::regex_match(targetJoined, matchResult, str_reg))
+    return targetJoined;
+  std::string strResult = std::move(targetJoined);
   std::vector<std::string> keyListHYPY;
   for (auto const& i : mapHanyuPinyin) keyListHYPY.push_back(i.first);
   std::sort(keyListHYPY.begin(), keyListHYPY.end(),
