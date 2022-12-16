@@ -197,9 +197,8 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄩㄝ");
 
   // Testing tool functions
-  XCTAssertEqual(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
-  XCTAssertEqual(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
-                 "ㄊㄧㄥ-˙ㄓㄜ");
+  XCTAssertEqual(Tekkon::restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  XCTAssertEqual(Tekkon::cnvPhonaToTextbookReading("ㄓㄜ˙"), "˙ㄓㄜ");
   XCTAssertEqual(Tekkon::cnvHanyuPinyinToPhona("bian4-le5-tian1"),
                  "ㄅㄧㄢˋ-ㄌㄜ˙-ㄊㄧㄢ");
 }

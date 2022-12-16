@@ -1279,7 +1279,7 @@ inline static std::string cnvPhonaToHanyuPinyin(std::string targetJoined = "") {
 ///
 /// @param targetJoined 傳入的 String 對象物件。
 inline static std::string cnvHanyuPinyinToTextBookStyle(
-    std::string targetJoined = "") {
+    std::string targetJoined) {
   std::string strResult = std::move(targetJoined);
   for (std::vector<std::string> i :
        arrHanyuPinyinTextbookStyleConversionTable) {
@@ -1289,52 +1289,30 @@ inline static std::string cnvHanyuPinyinToTextBookStyle(
 }
 
 /// 該函式負責將注音轉為教科書印刷的方式（先寫輕聲）。
-/// @param targetJoined 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
-/// @param newSeparator 新的讀音分隔符。
+/// @param target 要拿來做轉換處理的讀音。
 /// @returns 經過轉換處理的讀音鏈。
-inline static std::string cnvZhuyinChainToTextbookReading(
-    std::string targetJoined = "", std::string newSeparator = "-") {
-  std::vector<std::string> arrReturn = {};
-  std::string tempNeta;
-  std::stringstream targetStream(targetJoined);
-  while (std::getline(targetStream, tempNeta, '-')) {
-    if (tempNeta.find("˙") != std::string::npos) {
-      // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
-      tempNeta.pop_back();
-      tempNeta.pop_back();
-      tempNeta = "˙" + tempNeta;
-    }
-    arrReturn.push_back(tempNeta);
+inline static std::string cnvPhonaToTextbookReading(std::string target) {
+  std::string result = target;
+  if (result.find("˙") != std::string::npos) {
+    // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
+    result.pop_back();
+    result.pop_back();
+    result = "˙" + result;
   }
-  return std::accumulate(arrReturn.begin(), arrReturn.end(), std::string(),
-                         [&newSeparator](const std::string& a,
-                                         const std::string& b) -> std::string {
-                           return a + (a.length() > 0 ? newSeparator : "") + b;
-                         });
+  return result;
 }
 
 /// 該函式用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
-/// @param targetJoined 要拿來做轉換處理的讀音鏈，以英文減號來分隔每個讀音。
-/// @param newSeparator 新的讀音分隔符。
+/// @param target 要拿來做轉換處理的讀音。
 /// @returns 經過轉換處理的讀音鏈。
-inline static std::string restoreToneOneInZhuyinKey(
-    std::string targetJoined = "", std::string newSeparator = "-") {
-  std::vector<std::string> arrReturn = {};
-  std::string tempNeta;
-  std::stringstream targetStream(targetJoined);
-  while (std::getline(targetStream, tempNeta, '-')) {
-    if (tempNeta.find("ˊ") == std::string::npos &&
-        tempNeta.find("ˇ") == std::string::npos &&
-        tempNeta.find("ˋ") == std::string::npos &&
-        tempNeta.find("˙") == std::string::npos)
-      tempNeta = tempNeta + "1";
-    arrReturn.push_back(tempNeta);
-  }
-  return std::accumulate(arrReturn.begin(), arrReturn.end(), std::string(),
-                         [&newSeparator](const std::string& a,
-                                         const std::string& b) -> std::string {
-                           return a + (a.length() > 0 ? newSeparator : "") + b;
-                         });
+inline static std::string restoreToneOneInPhona(std::string target) {
+  std::string result = target;
+  if (result.find("ˊ") == std::string::npos &&
+      result.find("ˇ") == std::string::npos &&
+      result.find("ˋ") == std::string::npos &&
+      result.find("˙") == std::string::npos)
+    result = result + "1";
+  return result;
 }
 
 /// 該函式用來將漢語拼音轉為注音。
@@ -1476,7 +1454,7 @@ class Composer {
       std::string valReturnZhuyin = value();
       replaceOccurrences(valReturnZhuyin, " ", "");
       if (isTextBookStyle) {
-        valReturnZhuyin = cnvZhuyinChainToTextbookReading(valReturnZhuyin);
+        valReturnZhuyin = cnvPhonaToTextbookReading(valReturnZhuyin);
       }
       // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
       // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。

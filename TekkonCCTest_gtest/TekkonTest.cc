@@ -188,9 +188,8 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(), "ㄩㄝ");
 
   // Testing tool functions
-  ASSERT_EQ(Tekkon::restoreToneOneInZhuyinKey("ㄉㄧㄠ"), "ㄉㄧㄠ1");
-  ASSERT_EQ(Tekkon::cnvZhuyinChainToTextbookReading("ㄊㄧㄥ-ㄓㄜ˙"),
-            "ㄊㄧㄥ-˙ㄓㄜ");
+  ASSERT_EQ(Tekkon::restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  ASSERT_EQ(Tekkon::cnvPhonaToTextbookReading("ㄓㄜ˙"), "˙ㄓㄜ");
   ASSERT_EQ(Tekkon::cnvHanyuPinyinToPhona("bian4-le5-tian1"),
             "ㄅㄧㄢˋ-ㄌㄜ˙-ㄊㄧㄢ");
 }
