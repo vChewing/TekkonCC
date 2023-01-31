@@ -1691,7 +1691,29 @@ class Composer {
         default:
           break;
       }
+      if ((thePhone.type == PhoneType::vowel ||
+           thePhone.type == PhoneType::intonation) &&
+          (consonant.value() == "ㄓ" || consonant.value() == "ㄔ" ||
+           consonant.value() == "ㄕ" || consonant.value() == "ㄗ" ||
+           consonant.value() == "ㄘ" || consonant.value() == "ㄙ")) {
+        switch (hashify(semivowel.value().c_str())) {
+          case hashify("ㄧ"):
+            semivowel.clear();
+            break;
+          case hashify("ㄩ"):
+            if (consonant.value() == "ㄓ" || consonant.value() == "ㄗ")
+              consonant = Phonabet("ㄐ");
+            if (consonant.value() == "ㄔ" || consonant.value() == "ㄘ")
+              consonant = Phonabet("ㄑ");
+            if (consonant.value() == "ㄕ" || consonant.value() == "ㄙ")
+              consonant = Phonabet("ㄒ");
+            break;
+          default:
+            break;
+        }
+      }
     }
+
     switch (thePhone.type) {
       case PhoneType::consonant:
         consonant = thePhone;

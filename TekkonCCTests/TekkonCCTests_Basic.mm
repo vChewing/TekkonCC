@@ -73,6 +73,49 @@ using namespace Tekkon;
   XCTAssertTrue(result);
 }
 
+// =========== COMPOSER POKAYOKE TESTS ===========
+
+- (void)test_Basic_PhonabetCombinationCorrection {
+  Composer composer = Composer("", ofDachen, true);
+
+  composer.receiveKeyFromPhonabet("ㄓ");
+  composer.receiveKeyFromPhonabet("ㄧ");
+  composer.receiveKeyFromPhonabet("ˋ");
+  XCTAssertEqual(composer.value(), "ㄓˋ");
+
+  composer.clear();
+  composer.receiveKeyFromPhonabet("ㄓ");
+  composer.receiveKeyFromPhonabet("ㄩ");
+  composer.receiveKeyFromPhonabet("ˋ");
+  XCTAssertEqual(composer.value(), "ㄐㄩˋ");
+
+  composer.clear();
+  composer.receiveKeyFromPhonabet("ㄓ");
+  composer.receiveKeyFromPhonabet("ㄧ");
+  composer.receiveKeyFromPhonabet("ㄢ");
+  XCTAssertEqual(composer.value(), "ㄓㄢ");
+
+  composer.clear();
+  composer.receiveKeyFromPhonabet("ㄓ");
+  composer.receiveKeyFromPhonabet("ㄩ");
+  composer.receiveKeyFromPhonabet("ㄢ");
+  XCTAssertEqual(composer.value(), "ㄐㄩㄢ");
+
+  composer.clear();
+  composer.receiveKeyFromPhonabet("ㄓ");
+  composer.receiveKeyFromPhonabet("ㄧ");
+  composer.receiveKeyFromPhonabet("ㄢ");
+  composer.receiveKeyFromPhonabet("ˋ");
+  XCTAssertEqual(composer.value(), "ㄓㄢˋ");
+
+  composer.clear();
+  composer.receiveKeyFromPhonabet("ㄓ");
+  composer.receiveKeyFromPhonabet("ㄩ");
+  composer.receiveKeyFromPhonabet("ㄢ");
+  composer.receiveKeyFromPhonabet("ˋ");
+  XCTAssertEqual(composer.value(), "ㄐㄩㄢˋ");
+}
+
 // =========== PHONABET TYPINNG HANDLING TESTS (BASIC) ===========
 
 - (void)test_Basic_PhonabetKeyReceivingAndCompositions {
