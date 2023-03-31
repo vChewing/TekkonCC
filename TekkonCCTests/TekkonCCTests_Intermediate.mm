@@ -295,4 +295,54 @@ using namespace Tekkon;
   XCTAssertTrue(toneMarkerIndicator);
 }
 
+- (void)test_Pinyin_WadeGilesPinyinKeyReceivingAndCompositions {
+  Composer composer = Composer("", ofWadeGilesPinyin);
+  bool toneMarkerIndicator;
+
+  // Test Key Receiving
+  composer.receiveKey(99);  // c
+  composer.receiveKey("h");
+  composer.receiveKey("'");  // 韋氏拼音清濁分辨鍵
+  composer.receiveKey("i");
+  composer.receiveKey("u");
+  composer.receiveKey("n");
+  composer.receiveKey("g");
+
+  // Testing missing tone markers
+  toneMarkerIndicator = composer.hasIntonation();
+  XCTAssertTrue(!toneMarkerIndicator);
+
+  composer.receiveKey("2");  // 陽平
+  XCTAssertEqual(composer.value(), "ㄑㄩㄥˊ");
+  composer.doBackSpace();
+  composer.receiveKey(" ");  // 陰平
+  XCTAssertEqual(composer.value(),
+                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+
+  // Test Getting Displayed Composition
+  XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
+  XCTAssertEqual(composer.getComposition(true, false), "qiong1");
+  XCTAssertEqual(composer.getComposition(true, true), "qiōng");
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "ch'iung1");
+
+  // Test Tone 5
+  composer.receiveKey("7");  // 輕聲
+  XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ˙");
+  XCTAssertEqual(composer.getComposition(false, true), "˙ㄑㄩㄥ");
+
+  // Testing having tone markers
+  toneMarkerIndicator = composer.hasIntonation();
+  XCTAssertTrue(toneMarkerIndicator);
+
+  // Testing having not-only tone markers
+  toneMarkerIndicator = composer.hasIntonation(true);
+  XCTAssertTrue(!toneMarkerIndicator);
+
+  // Testing having only tone markers
+  composer.clear();
+  composer.receiveKey("3");  // 上聲
+  toneMarkerIndicator = composer.hasIntonation(true);
+  XCTAssertTrue(toneMarkerIndicator);
+}
+
 @end
