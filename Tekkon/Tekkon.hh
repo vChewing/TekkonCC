@@ -1631,56 +1631,36 @@ class Composer {
   ///
   /// @param isHanyuPinyin 是否將輸出結果轉成漢語拼音。
   std::string getInlineCompositionForDisplay(bool isHanyuPinyin = false) {
+    if (!isPinyinMode()) return getComposition(isHanyuPinyin);
     std::string result;
     std::string toneReturned;
-    switch (parser) {
-      case ofHanyuPinyin:
-      case ofSecondaryPinyin:
-      case ofYalePinyin:
-      case ofHualuoPinyin:
-      case ofUniversalPinyin:
-      case ofWadeGilesPinyin:
-        switch (hashify(intonation.value().c_str())) {
-          case hashify(" "):
-            toneReturned = "1";
-            break;
-          case hashify("ˊ"):
-            toneReturned = "2";
-            break;
-          case hashify("ˇ"):
-            toneReturned = "3";
-            break;
-          case hashify("ˋ"):
-            toneReturned = "4";
-            break;
-          case hashify("˙"):
-            toneReturned = "5";
-            break;
-        }
-        result = romajiBuffer + toneReturned;
-        replaceOccurrences(result, "v", "ü");
+    switch (hashify(intonation.value().c_str())) {
+      case hashify(" "):
+        toneReturned = "1";
         break;
-      default:
-        result = getComposition(isHanyuPinyin);
+      case hashify("ˊ"):
+        toneReturned = "2";
+        break;
+      case hashify("ˇ"):
+        toneReturned = "3";
+        break;
+      case hashify("ˋ"):
+        toneReturned = "4";
+        break;
+      case hashify("˙"):
+        toneReturned = "5";
         break;
     }
+    result = romajiBuffer + toneReturned;
+    replaceOccurrences(result, "v", "ü");
     return result;
   }
 
   /// 注拼槽內容是否為空。
   bool isEmpty() {
-    switch (parser) {
-      case ofHanyuPinyin:
-      case ofSecondaryPinyin:
-      case ofYalePinyin:
-      case ofHualuoPinyin:
-      case ofUniversalPinyin:
-      case ofWadeGilesPinyin:
-        return (intonation.isEmpty()) && (romajiBuffer.empty());
-      default:
-        return (consonant.isEmpty()) && (semivowel.isEmpty()) &&
-               (vowel.isEmpty()) && (intonation.isEmpty());
-    }
+    if (!isPinyinMode()) return intonation.isEmpty() && romajiBuffer.empty();
+    return consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty() &&
+           intonation.isEmpty();
   }
 
   /// 注拼槽內容是否可唸。
@@ -1792,32 +1772,24 @@ class Composer {
   ///
   /// @param input 傳入的 String 內容。
   void receiveKey(std::string input) {
+    if (!isPinyinMode()) {
+      receiveKeyFromPhonabet(translate(input));
+      return;
+    }
     int maxCount;
-    switch (parser) {
-      case ofHanyuPinyin:
-      case ofSecondaryPinyin:
-      case ofYalePinyin:
-      case ofHualuoPinyin:
-      case ofUniversalPinyin:
-      case ofWadeGilesPinyin:
-        if (mapArayuruPinyinIntonation.count(input)) {
-          std::string theTone = mapArayuruPinyinIntonation[input];
-          intonation = Phonabet(theTone);
-        } else {
-          // 為了防止 RomajiBuffer 越敲越長帶來算力負擔，
-          // 這裡讓它在要溢出時自動丟掉最早輸入的音頭。
-          maxCount = (parser == ofWadeGilesPinyin) ? 7 : 6;
-          if (romajiBuffer.length() > maxCount - 1) {
-            romajiBuffer.erase(0, 1);
-          }
-          std::string romajiBufferBackup = romajiBuffer + input;
-          receiveSequence(romajiBufferBackup, true);
-          romajiBuffer = romajiBufferBackup;
-        }
-        break;
-      default:
-        receiveKeyFromPhonabet(translate(input));
-        break;
+    if (mapArayuruPinyinIntonation.count(input)) {
+      std::string theTone = mapArayuruPinyinIntonation[input];
+      intonation = Phonabet(theTone);
+    } else {
+      // 為了防止 RomajiBuffer 越敲越長帶來算力負擔，
+      // 這裡讓它在要溢出時自動丟掉最早輸入的音頭。
+      maxCount = (parser == ofWadeGilesPinyin) ? 7 : 6;
+      if (romajiBuffer.length() > maxCount - 1) {
+        romajiBuffer.erase(0, 1);
+      }
+      std::string romajiBufferBackup = romajiBuffer + input;
+      receiveSequence(romajiBufferBackup, true);
+      romajiBuffer = romajiBufferBackup;
     }
   }
 
@@ -1982,7 +1954,7 @@ class Composer {
   ///
   /// 基本上就是按順序從游標前方開始往後刪。
   void doBackSpace() {
-    if (contains(arrPinyinParsers, parser) && !romajiBuffer.empty()) {
+    if (isPinyinMode() && !romajiBuffer.empty()) {
       if (!intonation.isEmpty()) {
         intonation.clear();
       } else {
@@ -2014,6 +1986,24 @@ class Composer {
 
   void ensureParser(MandarinParser arrange) { parser = arrange; };
 
+  /// 拿取用來進行索引檢索用的注音字串。
+  ///
+  /// 如果輸入法的辭典索引是漢語拼音的話，你可能用不上這個函式。
+  /// - Remark: 該字串結果不能為空，否則組字引擎會炸。
+  /// - Parameter pronouncable: 是否可以唸出。
+  /// - Returns: 可用的查詢用注音字串，或者空字串。
+  std::string phonabetKeyForQuery(bool pronouncable) {
+    std::string readingKey = getComposition();
+    bool validKeyGeneratable = false;
+    if (!isPinyinMode()) {
+      validKeyGeneratable =
+          pronouncable ? isPronouncable() : !readingKey.empty();
+    } else {
+      validKeyGeneratable = isPronouncable();
+    }
+    return validKeyGeneratable ? readingKey : "";
+  }
+
  protected:
   // MARK: - Parser Processings
 
@@ -2025,6 +2015,7 @@ class Composer {
   ///
   /// @param key 傳入的 String 訊號。
   std::string translate(std::string key) {
+    if (isPinyinMode()) return "";
     switch (parser) {
       case ofDachen:
         return mapQwertyDachen.count(key) ? mapQwertyDachen[key] : "";
@@ -2048,12 +2039,7 @@ class Composer {
         return mapFakeSeigyou.count(key) ? mapFakeSeigyou[key] : "";
       case ofStarlight:
         return handleStarlight(key);
-      case ofHanyuPinyin:
-      case ofSecondaryPinyin:
-      case ofYalePinyin:
-      case ofHualuoPinyin:
-      case ofUniversalPinyin:
-      case ofWadeGilesPinyin:
+      default:
         break;
     }
     return "";
