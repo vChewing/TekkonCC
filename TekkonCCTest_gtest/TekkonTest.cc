@@ -3528,9 +3528,8 @@ TEST(TekkonTests_Advanced, HsuKeys) {
   // Testing handleHsu()
   Composer composer = Composer("", ofHsu);
   ASSERT_EQ(composer.cnvSequence("kek"), "ㄎㄧㄤ");
-  // ASSERT_EQ(composer.cnvSequence("vezf"), expected:
-  // "ㄍㄧㄠˊ"); ASSERT_EQ(composer.cnvSequence("gen"),
-  // "ㄍㄧㄣ");
+  ASSERT_EQ(composer.cnvSequence("gewd"), "ㄍㄧㄠˊ");
+  ASSERT_EQ(composer.cnvSequence("gen"), "ㄍㄧㄣ");
   ASSERT_EQ(composer.cnvSequence("bekd"), "ㄅㄧㄤˊ");
   ASSERT_EQ(composer.cnvSequence("bekj"), "ㄅㄧㄤˋ");
   ASSERT_EQ(composer.cnvSequence("dxk"), "ㄉㄨㄤ");
@@ -5007,9 +5006,8 @@ TEST(TekkonTests_Advanced, StarlightKeys) {
   // Testing handleHsu()
   Composer composer = Composer("", ofStarlight);
   ASSERT_EQ(composer.cnvSequence("kik"), "ㄎㄧㄤ");
-  // ASSERT_EQ(composer.cnvSequence("gif7"), expected:
-  // "ㄍㄧㄠˊ"); ASSERT_EQ(composer.cnvSequence("gin"),
-  // "ㄍㄧㄣ");
+  ASSERT_EQ(composer.cnvSequence("gif7"), "ㄍㄧㄠˊ");
+  ASSERT_EQ(composer.cnvSequence("gin"), "ㄍㄧㄣ");
   ASSERT_EQ(composer.cnvSequence("bik7"), "ㄅㄧㄤˊ");
   ASSERT_EQ(composer.cnvSequence("bik9"), "ㄅㄧㄤˋ");
   ASSERT_EQ(composer.cnvSequence("duk"), "ㄉㄨㄤ");
