@@ -1296,10 +1296,10 @@ inline static std::map<std::string, std::string> mapQwertyDachen = {
 /// 據此判斷是否需要做複音切換。
 inline static std::map<std::string, std::string> mapDachenCP26StaticKeys = {
     {"a", "ㄇ"}, {"b", "ㄖ"}, {"c", "ㄏ"}, {"d", "ㄎ"}, {"e", "ㄍ"},
-    {"f", "ㄑ"}, {"g", "ㄕ"}, {"h", "ㄘ"}, {"i", "ㄛ"}, {"j", "ㄨ"},
-    {"k", "ㄜ"}, {"l", "ㄠ"}, {"m", "ㄩ"}, {"n", "ㄙ"}, {"o", "ㄟ"},
-    {"p", "ㄣ"}, {"q", "ㄆ"}, {"r", "ㄐ"}, {"s", "ㄋ"}, {"t", "ㄔ"},
-    {"u", "ㄧ"}, {"v", "ㄒ"}, {"w", "ㄊ"}, {"x", "ㄌ"}, {"y", "ㄗ"},
+    {"f", "ㄑ"}, {"g", "ㄕ"}, {"h", "ㄘ"}, {"i", "ㄞ"}, {"j", "ㄨ"},
+    {"k", "ㄜ"}, {"l", "ㄤ"}, {"m", "ㄩ"}, {"n", "ㄙ"}, {"o", "ㄢ"},
+    {"p", "ㄦ"}, {"q", "ㄅ"}, {"r", "ㄐ"}, {"s", "ㄋ"}, {"t", "ㄓ"},
+    {"u", "ㄧ"}, {"v", "ㄒ"}, {"w", "ㄉ"}, {"x", "ㄌ"}, {"y", "ㄗ"},
     {"z", "ㄈ"}, {" ", " "}};
 
 /// 許氏排列專用處理陣列，但未包含全部的映射內容。
@@ -1308,7 +1308,7 @@ inline static std::map<std::string, std::string> mapDachenCP26StaticKeys = {
 /// 這裡提前對複音按鍵做處理，然後再用程式判斷介母類型、
 /// 據此判斷是否需要做複音切換。
 inline static std::map<std::string, std::string> mapHsuStaticKeys = {
-    {"a", "ㄘ"}, {"b", "ㄅ"}, {"c", "ㄒ"}, {"d", "ㄉ"}, {"e", "ㄧ"},
+    {"a", "ㄘ"}, {"b", "ㄅ"}, {"c", "ㄕ"}, {"d", "ㄉ"}, {"e", "ㄧ"},
     {"f", "ㄈ"}, {"g", "ㄍ"}, {"h", "ㄏ"}, {"i", "ㄞ"}, {"j", "ㄐ"},
     {"k", "ㄎ"}, {"l", "ㄌ"}, {"m", "ㄇ"}, {"n", "ㄋ"}, {"o", "ㄡ"},
     {"p", "ㄆ"}, {"r", "ㄖ"}, {"s", "ㄙ"}, {"t", "ㄊ"}, {"u", "ㄩ"},
@@ -1515,6 +1515,7 @@ struct Phonabet {
   PhoneType type = null;
   std::string value() { return strStorage; }
   bool isEmpty() { return value().empty(); }
+  bool isValid() { return type != null; }
 
   ~Phonabet() { clear(); }
   /// 初期化，會根據傳入的 input 字串參數來自動判定自身的 PhoneType 類型屬性值。
@@ -1584,6 +1585,20 @@ class Composer {
     return consonant.value() + semivowel.value() + vowel.value() +
            intonation.value();
   };
+
+  /// 當前注拼槽是否處於拼音模式。
+  bool isPinyinMode() { return parser >= 100; }
+
+  /// 統計有效的聲介韻（調）個數。
+  ///
+  /// @param withIntonation 是否統計聲調。
+  int count(bool withIntonation = false) {
+    int result = (intonation.isValid() && withIntonation) ? 1 : 0;
+    result += consonant.isValid() ? 1 : 0;
+    result += semivowel.isValid() ? 1 : 0;
+    result += vowel.isValid() ? 1 : 0;
+    return result;
+  }
 
   /// 與 value 類似，這個函式就是用來決定輸入法組字區內顯示的注音/拼音內容，
   /// 但可以指定是否輸出教科書格式（拼音的調號在字母上方、注音的輕聲寫在左側）。
@@ -1745,6 +1760,24 @@ class Composer {
         return mapArayuruPinyin.find(inputKey) != std::string::npos;
     }
     return false;
+  }
+
+  /// 自我變換單個注音資料值。
+  /// @param strOf 要取代的內容。
+  /// @param strWith 要取代成的內容。
+  void fixValue(std::string strOf, std::string strWith) {
+    Phonabet theOld = Phonabet(strOf);
+    if (consonant.value() == strOf)
+      consonant.clear();
+    else if (semivowel.value() == strOf)
+      semivowel.clear();
+    else if (vowel.value() == strOf)
+      vowel.clear();
+    else if (intonation.value() == strOf)
+      intonation.clear();
+    else
+      return;
+    receiveKeyFromPhonabet(strWith);
   }
 
   void updateRomajiBuffer() {
@@ -2034,109 +2067,74 @@ class Composer {
   std::string handleETen26(std::string key) {
     std::string strReturn =
         (mapETen26StaticKeys.count(key)) ? mapETen26StaticKeys[key] : "";
-    Phonabet incomingPhonabet = Phonabet(strReturn);
+
+    std::string keysToHandleHere = "dfhjklmnpqtw";
 
     switch (hashify(key.c_str())) {
       case hashify("d"):
-        if (!isPronouncable())
-          consonant = Phonabet("ㄉ");
-        else
-          intonation = Phonabet("˙");
+        if (isPronouncable()) strReturn = ("˙");
         break;
       case hashify("f"):
-        if (!isPronouncable())
-          consonant = Phonabet("ㄈ");
-        else
-          intonation = Phonabet("ˊ");
+        if (isPronouncable()) strReturn = ("ˊ");
         break;
       case hashify("j"):
-        if (!isPronouncable())
-          consonant = Phonabet("ㄖ");
-        else
-          intonation = Phonabet("ˇ");
+        if (isPronouncable()) strReturn = ("ˇ");
         break;
       case hashify("k"):
-        if (!isPronouncable())
-          consonant = Phonabet("ㄎ");
-        else
-          intonation = Phonabet("ˋ");
+        if (isPronouncable()) strReturn = ("ˋ");
         break;
-      case hashify("h"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄏ");
-        else
-          vowel = Phonabet("ㄦ");
-        break;
-      case hashify("l"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄌ");
-        else
-          vowel = Phonabet("ㄥ");
-        break;
-      case hashify("m"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄇ");
-        } else {
-          vowel = Phonabet("ㄢ");
-        }
-        break;
-      case hashify("n"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄋ");
-        else
-          vowel = Phonabet("ㄣ");
-        break;
-      case hashify("q"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄗ");
-        else
-          vowel = Phonabet("ㄟ");
-        break;
-      case hashify("t"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄊ");
-        else
-          vowel = Phonabet("ㄤ");
-        break;
-      case hashify("w"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄘ");
-        else
-          vowel = Phonabet("ㄝ");
+      case hashify("e"):
+        if (consonant.value() == "ㄍ") consonant = Phonabet("ㄑ");
         break;
       case hashify("p"):
-        if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄆ");
-        else if (consonant.isEmpty() && semivowel.value() == "ㄧ")
-          vowel = Phonabet("ㄡ");
-        else if (consonant.isEmpty())
-          vowel = Phonabet("ㄆ");
-        else
-          vowel = Phonabet("ㄡ");
+        if (!consonant.isEmpty() || semivowel.value() == "ㄧ") strReturn = "ㄡ";
+        break;
+      case hashify("h"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄦ");
+        break;
+      case hashify("l"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄥ");
+        break;
+      case hashify("m"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄢ");
+        break;
+      case hashify("n"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄣ");
+        break;
+      case hashify("q"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄟ");
+        break;
+      case hashify("t"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄤ");
+        break;
+      case hashify("w"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄝ");
         break;
       default:
         break;
     }
 
-    // 處理特殊情形。
-    commonFixWhenHandlingDynamicArrangeInputs(incomingPhonabet);
+    if (keysToHandleHere.find(key, 0) != std::string::npos)
+      receiveKeyFromPhonabet(strReturn);
+
+    // 處理公共特殊情形。
+    commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
 
     if (std::string("dfjk ").find(key, 0) != std::string::npos &&
-        !consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty()) {
-      consonant.selfReplace("ㄆ", "ㄡ");
-      consonant.selfReplace("ㄇ", "ㄢ");
-      consonant.selfReplace("ㄊ", "ㄤ");
-      consonant.selfReplace("ㄋ", "ㄣ");
-      consonant.selfReplace("ㄌ", "ㄥ");
-      consonant.selfReplace("ㄏ", "ㄦ");
+        count() == 1) {
+      fixValue("ㄆ", "ㄡ");
+      fixValue("ㄇ", "ㄢ");
+      fixValue("ㄊ", "ㄤ");
+      fixValue("ㄋ", "ㄣ");
+      fixValue("ㄌ", "ㄥ");
+      fixValue("ㄏ", "ㄦ");
     }
 
     // 後置修正
     if (value() == "ㄍ˙") consonant = Phonabet("ㄑ");
 
     // 這些按鍵在上文處理過了，就不要再回傳了。
-    if (std::string("dfhjklmnpqtw").find(key, 0) != std::string::npos)
-      strReturn = "";
+    if (keysToHandleHere.find(key, 0) != std::string::npos) strReturn = "";
 
     // 回傳結果是空字串的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
@@ -2150,158 +2148,86 @@ class Composer {
   std::string handleHsu(std::string key) {
     std::string strReturn =
         (mapHsuStaticKeys.count(key)) ? mapHsuStaticKeys[key] : "";
-    Phonabet incomingPhonabet = Phonabet(strReturn);
 
-    if (key == " " && value() == "ㄋ") {
-      consonant.clear();
-      vowel = Phonabet("ㄣ");
-    }
+    std::string keysToHandleHere = "acdefghjklmns";
 
     switch (hashify(key.c_str())) {
       case hashify("d"):
-        if (isPronouncable()) {
-          intonation = Phonabet("ˊ");
-        } else {
-          consonant = Phonabet("ㄉ");
-        }
+        if (isPronouncable()) strReturn = ("ˊ");
         break;
       case hashify("f"):
-        if (isPronouncable()) {
-          intonation = Phonabet("ˇ");
-        } else {
-          consonant = Phonabet("ㄈ");
-        }
+        if (isPronouncable()) strReturn = ("ˇ");
         break;
       case hashify("s"):
-        if (isPronouncable()) {
-          intonation = Phonabet("˙");
-        } else {
-          consonant = Phonabet("ㄙ");
-        }
+        if (isPronouncable()) strReturn = ("˙");
         break;
       case hashify("j"):
-        if (isPronouncable()) {
-          intonation = Phonabet("ˋ");
-        } else {
-          consonant = Phonabet("ㄓ");
-        }
+        if (isPronouncable()) strReturn = ("ˋ");
         break;
       case hashify("a"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄘ");
-        } else {
-          vowel = Phonabet("ㄟ");
-        }
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄟ");
         break;
       case hashify("v"):
-        if (semivowel.isEmpty()) {
-          consonant = Phonabet("ㄔ");
-        } else {
-          consonant = Phonabet("ㄑ");
-        }
+        if (!semivowel.isEmpty()) strReturn = ("ㄑ");
         break;
       case hashify("c"):
-        if (semivowel.isEmpty()) {
-          consonant = Phonabet("ㄕ");
-        } else {
-          consonant = Phonabet("ㄒ");
-        }
+        if (!semivowel.isEmpty()) strReturn = ("ㄒ");
         break;
       case hashify("e"):
-        if (semivowel.isEmpty()) {
-          semivowel = Phonabet("ㄧ");
-        } else {
-          vowel = Phonabet("ㄝ");
-        }
+        if (!semivowel.isEmpty()) strReturn = ("ㄝ");
         break;
       case hashify("g"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄍ");
-        } else {
-          vowel = Phonabet("ㄜ");
-        }
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄜ");
         break;
       case hashify("h"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄏ");
-        } else {
-          vowel = Phonabet("ㄛ");
-        }
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄛ");
         break;
       case hashify("k"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄎ");
-        } else {
-          vowel = Phonabet("ㄤ");
-        }
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄤ");
         break;
       case hashify("m"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄇ");
-        } else {
-          vowel = Phonabet("ㄢ");
-        }
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄢ");
         break;
       case hashify("n"):
-        if (consonant.isEmpty() && semivowel.isEmpty()) {
-          consonant = Phonabet("ㄋ");
-        } else {
-          vowel = Phonabet("ㄣ");
-        }
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄣ");
         break;
       case hashify("l"):
         if (value().empty() && !consonant.isEmpty() && !semivowel.isEmpty())
-          vowel = Phonabet("ㄦ");
+          strReturn = ("ㄦ");
         else if (consonant.isEmpty() && semivowel.isEmpty())
-          consonant = Phonabet("ㄌ");
+          strReturn = ("ㄌ");
         else
-          vowel = Phonabet("ㄥ");
+          strReturn = ("ㄥ");
         break;
       default:
         break;
     }
 
-    // 處理特殊情形。
-    commonFixWhenHandlingDynamicArrangeInputs(incomingPhonabet);
+    if (keysToHandleHere.find(key, 0) != std::string::npos)
+      receiveKeyFromPhonabet(strReturn);
 
-    if (std::string("dfjs ").find(key, 0) != std::string::npos) {
-      if (!consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty()) {
-        consonant.selfReplace("ㄍ", "ㄜ");
-        consonant.selfReplace("ㄋ", "ㄣ");
-        consonant.selfReplace("ㄌ", "ㄦ");
-        consonant.selfReplace("ㄎ", "ㄤ");
-        consonant.selfReplace("ㄇ", "ㄢ");
-      }
-      if (!consonant.isEmpty() && vowel.isEmpty()) {
-        consonant.selfReplace("ㄧ", "ㄝ");
-      }
-      if (!vowel.isEmpty() &&
-          std::string("ㄢㄣㄤㄥ").find(vowel.value(), 0) != std::string::npos &&
-          semivowel.isEmpty()) {
-        consonant.selfReplace("ㄐ", "ㄓ");
-        consonant.selfReplace("ㄑ", "ㄔ");
-        consonant.selfReplace("ㄒ", "ㄕ");
-      }
-      if (!consonant.isEmpty() &&
-          std::string("ㄐㄑㄒ").find(consonant.value(), 0) !=
-              std::string::npos &&
-          semivowel.isEmpty()) {
-        consonant.selfReplace("ㄐ", "ㄓ");
-        consonant.selfReplace("ㄑ", "ㄔ");
-        consonant.selfReplace("ㄒ", "ㄕ");
-      }
-      if (consonant.value() == "ㄏ" && semivowel.isEmpty() && vowel.isEmpty()) {
-        consonant.clear();
-        vowel = Phonabet("ㄛ");
-      }
+    // 處理公共特殊情形。
+    commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
+
+    if (std::string("dfjs ").find(key, 0) != std::string::npos &&
+        count() == 1) {
+      fixValue("ㄒ", "ㄕ");
+      fixValue("ㄍ", "ㄜ");
+      fixValue("ㄋ", "ㄣ");
+      fixValue("ㄌ", "ㄦ");
+      fixValue("ㄎ", "ㄤ");
+      fixValue("ㄇ", "ㄢ");
+      fixValue("ㄐ", "ㄓ");
+      fixValue("ㄑ", "ㄔ");
+      fixValue("ㄒ", "ㄕ");
+      fixValue("ㄏ", "ㄛ");
     }
 
     // 後置修正
     if (value() == "ㄔ˙") consonant = Phonabet("ㄑ");
 
-    // 這些按鍵在上文處理過了，就不要再回傳了。;
-    if (std::string("acdefghjklmns").find(key, 0) != std::string::npos)
-      strReturn = "";
+    // 這些按鍵在上文處理過了，就不要再回傳了。
+    if (keysToHandleHere.find(key, 0) != std::string::npos) strReturn = "";
 
     // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
@@ -2315,48 +2241,58 @@ class Composer {
   std::string handleStarlight(std::string key) {
     std::string strReturn =
         (mapStarlightStaticKeys.count(key)) ? mapStarlightStaticKeys[key] : "";
-    Phonabet incomingPhonabet = Phonabet(strReturn);
+
+    std::string keysToHandleHere = "efgklmnt";
 
     switch (hashify(key.c_str())) {
       case hashify("e"):
-        return (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ") ? "ㄝ"
-                                                                        : "ㄜ";
+        if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
+          strReturn = "ㄝ";
+        break;
       case hashify("f"):
-        return vowel.value() == "ㄠ" || !isPronouncable() ? "ㄈ" : "ㄠ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄠ";
+        break;
       case hashify("g"):
-        return vowel.value() == "ㄥ" || !isPronouncable() ? "ㄍ" : "ㄥ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄥ";
+        break;
       case hashify("k"):
-        return vowel.value() == "ㄤ" || !isPronouncable() ? "ㄎ" : "ㄤ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄤ";
+        break;
       case hashify("l"):
-        return vowel.value() == "ㄦ" || !isPronouncable() ? "ㄌ" : "ㄦ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄦ";
+        break;
       case hashify("m"):
-        return vowel.value() == "ㄢ" || !isPronouncable() ? "ㄇ" : "ㄢ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄢ";
+        break;
       case hashify("n"):
-        return vowel.value() == "ㄣ" || !isPronouncable() ? "ㄋ" : "ㄣ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄣ";
+        break;
       case hashify("t"):
-        return vowel.value() == "ㄟ" || !isPronouncable() ? "ㄊ" : "ㄟ";
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄟ";
+        break;
       default:
         break;
     }
 
-    // 處理特殊情形。
-    commonFixWhenHandlingDynamicArrangeInputs(incomingPhonabet);
+    if (keysToHandleHere.find(key, 0) != std::string::npos)
+      receiveKeyFromPhonabet(strReturn);
 
-    if (std::string("67890 ").find(key, 0) != std::string::npos) {
-      if (!consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty()) {
-        consonant.selfReplace("ㄈ", "ㄠ");
-        consonant.selfReplace("ㄍ", "ㄥ");
-        consonant.selfReplace("ㄎ", "ㄤ");
-        consonant.selfReplace("ㄌ", "ㄦ");
-        consonant.selfReplace("ㄇ", "ㄢ");
-        consonant.selfReplace("ㄋ", "ㄣ");
-        consonant.selfReplace("ㄊ", "ㄟ");
-      }
+    // 處理公共特殊情形。
+    commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
+
+    if (std::string("67890 ").find(key, 0) != std::string::npos &&
+        count() == 1) {
+      fixValue("ㄈ", "ㄠ");
+      fixValue("ㄍ", "ㄥ");
+      fixValue("ㄎ", "ㄤ");
+      fixValue("ㄌ", "ㄦ");
+      fixValue("ㄇ", "ㄢ");
+      fixValue("ㄋ", "ㄣ");
+      fixValue("ㄊ", "ㄟ");
     }
 
-    // 這些按鍵在上文處理過了，就不要再回傳了。;
-    if (std::string("efgklmn").find(key, 0) != std::string::npos)
-      strReturn = "";
+    // 這些按鍵在上文處理過了，就不要再回傳了。
+    if (keysToHandleHere.find(key, 0) != std::string::npos) strReturn = "";
 
     // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
@@ -2372,132 +2308,93 @@ class Composer {
                                 ? mapDachenCP26StaticKeys[key]
                                 : "";
 
+    // std::string keysToHandleHere = "erdybilnopqtwmu";
+
     switch (hashify(key.c_str())) {
       case (hashify("e")):
-        if (isPronouncable())
-          intonation = Phonabet("ˊ");
-        else
-          consonant = Phonabet("ㄍ");
+        if (isPronouncable()) strReturn = ("ˊ");
         break;
       case hashify("r"):
-        if (isPronouncable())
-          intonation = Phonabet("ˇ");
-        else
-          consonant = Phonabet("ㄐ");
+        if (isPronouncable()) strReturn = ("ˇ");
         break;
       case hashify("d"):
-        if (isPronouncable())
-          intonation = Phonabet("ˋ");
-        else
-          consonant = Phonabet("ㄎ");
+        if (isPronouncable()) strReturn = ("ˋ");
         break;
       case hashify("y"):
-        if (isPronouncable())
-          intonation = Phonabet("˙");
-        else
-          consonant = Phonabet("ㄗ");
+        if (isPronouncable()) strReturn = ("˙");
         break;
       case hashify("b"):
-        if (!consonant.isEmpty() || !semivowel.isEmpty())
-          vowel = Phonabet("ㄝ");
-        else
-          consonant = Phonabet("ㄖ");
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄝ");
         break;
       case hashify("i"):
-        if (vowel.isEmpty() || vowel.value() == "ㄞ")
-          vowel = Phonabet("ㄛ");
-        else
-          vowel = Phonabet("ㄞ");
+        if (vowel.isEmpty() || vowel.value() == "ㄞ") strReturn = ("ㄛ");
         break;
       case hashify("l"):
-        if (vowel.isEmpty() || vowel.value() == "ㄤ")
-          vowel = Phonabet("ㄠ");
-        else
-          vowel = Phonabet("ㄤ");
+        if (vowel.isEmpty() || vowel.value() == "ㄤ") strReturn = ("ㄠ");
         break;
       case hashify("n"):
         if (!consonant.isEmpty() || !semivowel.isEmpty()) {
-          if (consonant.value() == "ㄙ" && semivowel.isEmpty() &&
-              vowel.isEmpty())
-            consonant.clear();
-          vowel = Phonabet("ㄥ");
-        } else
-          consonant = Phonabet("ㄙ");
+          if (value() == "ㄙ") consonant.clear();
+          strReturn = ("ㄥ");
+        }
         break;
       case hashify("o"):
-        if (vowel.isEmpty() || vowel.value() == "ㄢ")
-          vowel = Phonabet("ㄟ");
-        else
-          vowel = Phonabet("ㄢ");
+        if (vowel.isEmpty() || vowel.value() == "ㄢ") strReturn = ("ㄟ");
         break;
       case hashify("p"):
-        if (vowel.isEmpty() || vowel.value() == "ㄦ")
-          vowel = Phonabet("ㄣ");
-        else
-          vowel = Phonabet("ㄦ");
+        if (vowel.isEmpty() || vowel.value() == "ㄦ") strReturn = ("ㄣ");
         break;
       case hashify("q"):
         if (consonant.isEmpty() || consonant.value() == "ㄅ")
-          consonant = Phonabet("ㄆ");
-        else
-          consonant = Phonabet("ㄅ");
+          strReturn = ("ㄆ");
         break;
       case hashify("t"):
         if (consonant.isEmpty() || consonant.value() == "ㄓ")
-          consonant = Phonabet("ㄔ");
-        else
-          consonant = Phonabet("ㄓ");
+          strReturn = ("ㄔ");
         break;
       case hashify("w"):
         if (consonant.isEmpty() || consonant.value() == "ㄉ")
-          consonant = Phonabet("ㄊ");
-        else
-          consonant = Phonabet("ㄉ");
+          strReturn = ("ㄊ");
         break;
       case hashify("m"):
         if (semivowel.value() == "ㄩ" && vowel.value() != "ㄡ") {
           semivowel.clear();
-          vowel = Phonabet("ㄡ");
+          strReturn = ("ㄡ");
         } else if (semivowel.value() != "ㄩ" && vowel.value() == "ㄡ") {
-          semivowel = Phonabet("ㄩ");
           vowel.clear();
+          strReturn = ("ㄩ");
         } else if (!semivowel.isEmpty())
-          vowel = Phonabet("ㄡ");
+          strReturn = ("ㄡ");
         else {
-          receiveKeyFromPhonabet(consonant.value() == "ㄐ" ||
-                                         consonant.value() == "ㄑ" ||
-                                         consonant.value() == "ㄒ"
-                                     ? "ㄩ"
-                                     : "ㄡ");
+          strReturn = (consonant.value() == "ㄐ" || consonant.value() == "ㄑ" ||
+                       consonant.value() == "ㄒ")
+                          ? "ㄩ"
+                          : "ㄡ";
         }
         break;
       case hashify("u"):
         if (semivowel.value() == "ㄧ" && vowel.value() != "ㄚ") {
           semivowel.clear();
-          vowel = Phonabet("ㄚ");
+          strReturn = ("ㄚ");
         } else if (semivowel.value() != "ㄧ" && vowel.value() == "ㄚ")
-          semivowel = Phonabet("ㄧ");
+          strReturn = ("ㄧ");
         else if (semivowel.value() == "ㄧ" && vowel.value() == "ㄚ") {
           semivowel.clear();
           vowel.clear();
         } else if (!semivowel.isEmpty())
-          vowel = Phonabet("ㄚ");
+          strReturn = ("ㄚ");
         else
-          semivowel = Phonabet("ㄧ");
+          strReturn = ("ㄧ");
         break;
       default:
         break;
     }
 
-    // 這些按鍵在上文處理過了，就不要再回傳了。
-    if (std::string("qwtilopnbmuerdy").find(key, 0) != std::string::npos)
-      strReturn = "";
-
     // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
   }
 
-  /// 所有動態注音鍵盤佈局都會用到的共用糾錯處理步驟。
+  /// 所有動態注音排列都會用到的共用糾錯處理步驟。
   /// @param incomingPhonabet 傳入的注音 Phonabet。
   void commonFixWhenHandlingDynamicArrangeInputs(Phonabet incomingPhonabet) {
     switch (incomingPhonabet.type) {
@@ -2505,9 +2402,8 @@ class Composer {
         switch (hashify(consonant.value().c_str())) {
           case hashify("ㄍ"):
             switch (hashify(incomingPhonabet.value().c_str())) {
-              case hashify("ㄧ"):
-                consonant = Phonabet("ㄑ");
-                break;  // ㄑㄧ
+              // 這裡不處理「ㄍㄧ」到「ㄑㄧ」的轉換，因為只有倚天26需要處理這個。
+              // case hashify("ㄧ"): consonant = Phonabet("ㄑ"); break;  // ㄑㄧ
               case hashify("ㄨ"):
                 consonant = Phonabet("ㄍ");
                 break;  // ㄍㄨ
@@ -2568,10 +2464,10 @@ class Composer {
         }
         break;
       case PhoneType::vowel:
-        if (semivowel.isEmpty() && !consonant.isEmpty()) {
-          consonant.selfReplace("ㄐ", "ㄓ");
-          consonant.selfReplace("ㄑ", "ㄔ");
-          consonant.selfReplace("ㄒ", "ㄕ");
+        if (semivowel.isEmpty()) {
+          fixValue("ㄐ", "ㄓ");
+          fixValue("ㄑ", "ㄔ");
+          fixValue("ㄒ", "ㄕ");
         }
         break;
       default:

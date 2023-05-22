@@ -3018,9 +3018,8 @@ using namespace Tekkon;
   // Testing handleHsu()
   Composer composer = Composer("", ofHsu);
   XCTAssertEqual(composer.cnvSequence("kek"), "ㄎㄧㄤ");
-  // XCTAssertEqual(composer.cnvSequence("vezf"), expected:
-  // "ㄍㄧㄠˊ"); XCTAssertEqual(composer.cnvSequence("gen"),
-  // "ㄍㄧㄣ");
+  XCTAssertEqual(composer.cnvSequence("gewd"), "ㄍㄧㄠˊ");
+  XCTAssertEqual(composer.cnvSequence("gen"), "ㄍㄧㄣ");
   XCTAssertEqual(composer.cnvSequence("bekd"), "ㄅㄧㄤˊ");
   XCTAssertEqual(composer.cnvSequence("bekj"), "ㄅㄧㄤˋ");
   XCTAssertEqual(composer.cnvSequence("dxk"), "ㄉㄨㄤ");
@@ -4497,9 +4496,8 @@ using namespace Tekkon;
   // Testing handleHsu()
   Composer composer = Composer("", ofStarlight);
   XCTAssertEqual(composer.cnvSequence("kik"), "ㄎㄧㄤ");
-  // XCTAssertEqual(composer.cnvSequence("gif7"), expected:
-  // "ㄍㄧㄠˊ"); XCTAssertEqual(composer.cnvSequence("gin"),
-  // "ㄍㄧㄣ");
+  XCTAssertEqual(composer.cnvSequence("gif7"), "ㄍㄧㄠˊ");
+  XCTAssertEqual(composer.cnvSequence("gin"), "ㄍㄧㄣ");
   XCTAssertEqual(composer.cnvSequence("bik7"), "ㄅㄧㄤˊ");
   XCTAssertEqual(composer.cnvSequence("bik9"), "ㄅㄧㄤˋ");
   XCTAssertEqual(composer.cnvSequence("duk"), "ㄉㄨㄤ");
