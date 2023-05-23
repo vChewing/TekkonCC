@@ -119,6 +119,14 @@ inline static std::vector<std::string> splitByCodepoint(std::string input) {
   return arrReturned;
 }
 
+/// 檢查第二個字串參數是否被第一個字串參數所包含。
+/// @param able 第一個字串參數。
+/// @param baker 第二個字串參數。
+inline static bool stringInclusion(std::string able, std::string baker) {
+  return (baker.empty()) ? able.empty()
+                         : (able.find(baker, 0) != std::string::npos);
+}
+
 // MARK: - Static Constants and Basic Enums
 
 /// 定義注音符號的種類
@@ -142,6 +150,7 @@ enum MandarinParser : int {
   ofSeigyou = 7,
   ofFakeSeigyou = 8,
   ofStarlight = 9,
+  ofAlvinLiu = 10,
   ofHanyuPinyin = 100,
   ofSecondaryPinyin = 101,
   ofYalePinyin = 102,
@@ -1343,6 +1352,19 @@ inline static std::map<std::string, std::string> mapETen26StaticKeys = {
     {"u", "ㄩ"}, {"v", "ㄍ"}, {"w", "ㄘ"}, {"x", "ㄨ"}, {"y", "ㄔ"},
     {"z", "ㄠ"}, {" ", " "}};
 
+/// 劉氏擬音注音排列預處理專用陣列，但未包含全部的映射內容。
+///
+/// 在這裡將二十六個字母寫全，也只是為了方便做 validity check。
+/// 這裡提前對複音按鍵做處理，然後再用程式判斷介母類型、
+/// 據此判斷是否需要做複音切換。
+inline static std::map<std::string, std::string> mapAlvinLiuStaticKeys = {
+    {"q", "ㄑ"}, {"w", "ㄠ"}, {"e", "ㄜ"}, {"r", "ㄖ"}, {"t", "ㄊ"},
+    {"y", "ㄩ"}, {"u", "ㄨ"}, {"i", "ㄧ"}, {"o", "ㄛ"}, {"p", "ㄆ"},
+    {"a", "ㄚ"}, {"s", "ㄙ"}, {"d", "ㄉ"}, {"f", "ㄈ"}, {"g", "ㄍ"},
+    {"h", "ㄏ"}, {"j", "ㄐ"}, {"k", "ㄎ"}, {"l", "ㄦ"}, {"z", "ㄗ"},
+    {"x", "ㄒ"}, {"c", "ㄘ"}, {"v", "ㄡ"}, {"b", "ㄅ"}, {"n", "ㄋ"},
+    {"m", "ㄇ"}, {" ", " "}};
+
 /// 倚天傳統排列專用處理陣列。
 inline static std::map<std::string, std::string> mapQwertyETenTraditional = {
     {"'", "ㄘ"}, {",", "ㄓ"}, {"-", "ㄥ"}, {".", "ㄔ"}, {"/", "ㄕ"},
@@ -1440,7 +1462,7 @@ inline static std::string cnvHanyuPinyinToTextBookStyle(
 /// @returns 經過轉換處理的讀音鏈。
 inline static std::string cnvPhonaToTextbookReading(std::string target) {
   std::string result = target;
-  if (result.find("˙") != std::string::npos) {
+  if (stringInclusion(result, "˙")) {
     // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
     result.pop_back();
     result.pop_back();
@@ -1470,7 +1492,7 @@ inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
                                                 std::string newToneOne = "") {
   std::regex str_reg(".*[^A-Za-z0-9].*");
   std::smatch matchResult;
-  if (targetJoined.find("_") != std::string::npos ||
+  if (stringInclusion(targetJoined, "_") ||
       !std::regex_match(targetJoined, matchResult, str_reg))
     return targetJoined;
   std::string strResult = std::move(targetJoined);
@@ -1730,14 +1752,17 @@ class Composer {
       case ofStarlight:
         return mapStarlightStaticKeys.find(inputKey) !=
                mapStarlightStaticKeys.end();
+      case ofAlvinLiu:
+        return mapAlvinLiuStaticKeys.find(inputKey) !=
+               mapAlvinLiuStaticKeys.end();
       case ofWadeGilesPinyin:
-        return mapWadeGilesPinyinKeys.find(inputKey) != std::string::npos;
+        return stringInclusion(mapWadeGilesPinyinKeys, inputKey);
       case ofHanyuPinyin:
       case ofSecondaryPinyin:
       case ofYalePinyin:
       case ofHualuoPinyin:
       case ofUniversalPinyin:
-        return mapArayuruPinyin.find(inputKey) != std::string::npos;
+        return stringInclusion(mapArayuruPinyin, inputKey);
     }
     return false;
   }
@@ -1980,18 +2005,16 @@ class Composer {
                            : !intonation.isEmpty();
   }
 
-  // 設定該 Composer 處於何種鍵盤排列分析模式。
+  /// 設定該 Composer 處於何種鍵盤排列分析模式。
   ///
   /// @param arrange 給該注拼槽指定注音排列。
-
   void ensureParser(MandarinParser arrange) { parser = arrange; };
 
   /// 拿取用來進行索引檢索用的注音字串。
   ///
   /// 如果輸入法的辭典索引是漢語拼音的話，你可能用不上這個函式。
-  /// - Remark: 該字串結果不能為空，否則組字引擎會炸。
-  /// - Parameter pronouncable: 是否可以唸出。
-  /// - Returns: 可用的查詢用注音字串，或者空字串。
+  /// @remark 警告：該字串結果不能為空，否則組字引擎會炸。
+  /// @param pronouncable 是否可以唸出。
   std::string phonabetKeyForQuery(bool pronouncable) {
     std::string readingKey = getComposition();
     bool validKeyGeneratable = false;
@@ -2039,13 +2062,15 @@ class Composer {
         return mapFakeSeigyou.count(key) ? mapFakeSeigyou[key] : "";
       case ofStarlight:
         return handleStarlight(key);
+      case ofAlvinLiu:
+        return handleAlvinLiu(key);
       default:
         break;
     }
     return "";
   }
 
-  /// 倚天忘形注音排列比較麻煩，需要單獨處理。
+  /// 倚天忘形注音排列是複合注音排列，需要單獨處理。
   ///
   /// 回傳結果是空字串的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
@@ -2100,14 +2125,13 @@ class Composer {
         break;
     }
 
-    if (keysToHandleHere.find(key, 0) != std::string::npos)
+    if (stringInclusion(keysToHandleHere, key))
       receiveKeyFromPhonabet(strReturn);
 
     // 處理公共特殊情形。
     commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
 
-    if (std::string("dfjk ").find(key, 0) != std::string::npos &&
-        count() == 1) {
+    if (stringInclusion("dfjk ", key) && count() == 1) {
       fixValue("ㄆ", "ㄡ");
       fixValue("ㄇ", "ㄢ");
       fixValue("ㄊ", "ㄤ");
@@ -2120,13 +2144,13 @@ class Composer {
     if (value() == "ㄍ˙") consonant = Phonabet("ㄑ");
 
     // 這些按鍵在上文處理過了，就不要再回傳了。
-    if (keysToHandleHere.find(key, 0) != std::string::npos) strReturn = "";
+    if (stringInclusion(keysToHandleHere, key)) strReturn = "";
 
     // 回傳結果是空字串的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
   }
 
-  /// 許氏鍵盤與倚天忘形一樣同樣也比較麻煩，需要單獨處理。
+  /// 許氏注音排列是複合注音排列，需要單獨處理。
   ///
   /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
@@ -2189,14 +2213,13 @@ class Composer {
         break;
     }
 
-    if (keysToHandleHere.find(key, 0) != std::string::npos)
+    if (stringInclusion(keysToHandleHere, key))
       receiveKeyFromPhonabet(strReturn);
 
     // 處理公共特殊情形。
     commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
 
-    if (std::string("dfjs ").find(key, 0) != std::string::npos &&
-        count() == 1) {
+    if (stringInclusion("dfjs ", key) && count() == 1) {
       fixValue("ㄒ", "ㄕ");
       fixValue("ㄍ", "ㄜ");
       fixValue("ㄋ", "ㄣ");
@@ -2213,13 +2236,13 @@ class Composer {
     if (value() == "ㄔ˙") consonant = Phonabet("ㄑ");
 
     // 這些按鍵在上文處理過了，就不要再回傳了。
-    if (keysToHandleHere.find(key, 0) != std::string::npos) strReturn = "";
+    if (stringInclusion(keysToHandleHere, key)) strReturn = "";
 
     // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
   }
 
-  /// 星光鍵盤與倚天忘形一樣同樣也比較麻煩，需要單獨處理。
+  /// 星光注音排列是複合注音排列，需要單獨處理。
   ///
   /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
@@ -2260,14 +2283,13 @@ class Composer {
         break;
     }
 
-    if (keysToHandleHere.find(key, 0) != std::string::npos)
+    if (stringInclusion(keysToHandleHere, key))
       receiveKeyFromPhonabet(strReturn);
 
     // 處理公共特殊情形。
     commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
 
-    if (std::string("67890 ").find(key, 0) != std::string::npos &&
-        count() == 1) {
+    if (stringInclusion("67890 ", key) && count() == 1) {
       fixValue("ㄈ", "ㄠ");
       fixValue("ㄍ", "ㄥ");
       fixValue("ㄎ", "ㄤ");
@@ -2278,13 +2300,13 @@ class Composer {
     }
 
     // 這些按鍵在上文處理過了，就不要再回傳了。
-    if (keysToHandleHere.find(key, 0) != std::string::npos) strReturn = "";
+    if (stringInclusion(keysToHandleHere, key)) strReturn = "";
 
     // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
     return strReturn;
   }
 
-  /// 酷音大千二十六鍵一樣同樣也比較麻煩，需要單獨處理。
+  /// 酷音大千二十六鍵注音排列是複合注音排列，需要單獨處理。
   ///
   /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
   ///
@@ -2293,8 +2315,6 @@ class Composer {
     std::string strReturn = (mapDachenCP26StaticKeys.count(key))
                                 ? mapDachenCP26StaticKeys[key]
                                 : "";
-
-    // std::string keysToHandleHere = "erdybilnopqtwmu";
 
     switch (hashify(key.c_str())) {
       case (hashify("e")):
@@ -2380,6 +2400,89 @@ class Composer {
     return strReturn;
   }
 
+  /// 劉氏擬音注音排列是複合注音排列，需要單獨處理。
+  ///
+  /// 回傳結果是空的話，不要緊，因為該函式內部已經處理過分配過程了。
+  /// @remark 該處理兼顧了「原旨排列方案」與「微軟新注音相容排列方案」。
+  /// @param key 傳入的 std::string 訊號。
+  std::string handleAlvinLiu(std::string key) {
+    std::string strReturn =
+        (mapAlvinLiuStaticKeys.count(key)) ? mapAlvinLiuStaticKeys[key] : "";
+
+    // 前置處理專有特殊情形。
+    if (strReturn != "ㄦ" && !vowel.isEmpty()) fixValue("ㄦ", "ㄌ");
+
+    std::string keysToHandleHere = "dfjlegnhkbmc";
+
+    switch (hashify(key.c_str())) {
+      case hashify("d"):
+        if (isPronouncable()) strReturn = ("˙");
+        break;
+      case hashify("f"):
+        if (isPronouncable()) strReturn = ("ˊ");
+        break;
+      case hashify("j"):
+        if (isPronouncable()) strReturn = ("ˇ");
+        break;
+      case hashify("l"):
+        if (isPronouncable()) strReturn = ("ˋ");
+        break;
+      case hashify("e"):
+        if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
+          strReturn = "ㄝ";
+        break;
+      case hashify("g"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄤ";
+        break;
+      case hashify("n"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄣ";
+        break;
+      case hashify("h"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄞ";
+        break;
+      case hashify("k"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄟ";
+        break;
+      case hashify("b"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄢ";
+        break;
+      case hashify("m"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄥ";
+        break;
+      case hashify("c"):
+        if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = "ㄝ";
+        break;
+      default:
+        break;
+    }
+
+    if (stringInclusion(keysToHandleHere, key))
+      receiveKeyFromPhonabet(strReturn);
+
+    // 處理公共特殊情形。
+    commonFixWhenHandlingDynamicArrangeInputs(Phonabet(strReturn));
+
+    if (stringInclusion("dfjl ", key) && count() == 1) {
+      fixValue("ㄑ", "ㄔ");
+      fixValue("ㄊ", "ㄦ");
+      fixValue("ㄍ", "ㄤ");
+      fixValue("ㄏ", "ㄞ");
+      fixValue("ㄐ", "ㄓ");
+      fixValue("ㄎ", "ㄟ");
+      fixValue("ㄌ", "ㄦ");
+      fixValue("ㄒ", "ㄕ");
+      fixValue("ㄅ", "ㄢ");
+      fixValue("ㄋ", "ㄣ");
+      fixValue("ㄇ", "ㄥ");
+    }
+
+    // 這些按鍵在上文處理過了，就不要再回傳了。
+    if (stringInclusion(keysToHandleHere, key)) strReturn = "";
+
+    // 回傳結果是空的話，不要緊，因為上文已經代處理過分配過程了。
+    return strReturn;
+  }
+
   /// 所有動態注音排列都會用到的共用糾錯處理步驟。
   /// @param incomingPhonabet 傳入的注音 Phonabet。
   void commonFixWhenHandlingDynamicArrangeInputs(Phonabet incomingPhonabet) {
@@ -2447,6 +2550,11 @@ class Composer {
             break;
           default:
             break;
+        }
+        if (incomingPhonabet.value() == "ㄨ") {
+          fixValue("ㄐ", "ㄓ");
+          fixValue("ㄑ", "ㄔ");
+          fixValue("ㄒ", "ㄕ");
         }
         break;
       case PhoneType::vowel:
