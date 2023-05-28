@@ -1727,42 +1727,50 @@ class Composer {
   /// @param inputCharCode 傳入的 charCode 內容。
   [[nodiscard]] bool inputValidityCheck(char inputCharCode) {
     std::string inputKey(1, inputCharCode);
-    if ((int)inputCharCode >= 128) return false;
+    return ((int)inputCharCode < 128) && inputValidityCheckStr(inputKey);
+  }
+
+  /// 用於檢測「某個輸入字符訊號的合規性」的函式。
+  ///
+  /// 注意：回傳結果會受到當前注音排列 parser 屬性的影響。
+  ///
+  /// @param charStr 傳入的字元（String）。
+  [[nodiscard]] bool inputValidityCheckStr(std::string charStr) {
     switch (parser) {
       case ofDachen:
-        return mapQwertyDachen.find(inputKey) != mapQwertyDachen.end();
+        return mapQwertyDachen.find(charStr) != mapQwertyDachen.end();
       case ofDachen26:
-        return mapDachenCP26StaticKeys.find(inputKey) !=
+        return mapDachenCP26StaticKeys.find(charStr) !=
                mapDachenCP26StaticKeys.end();
       case ofETen:
-        return mapQwertyETenTraditional.find(inputKey) !=
+        return mapQwertyETenTraditional.find(charStr) !=
                mapQwertyETenTraditional.end();
       case ofHsu:
-        return mapHsuStaticKeys.find(inputKey) != mapHsuStaticKeys.end();
+        return mapHsuStaticKeys.find(charStr) != mapHsuStaticKeys.end();
       case ofETen26:
-        return mapETen26StaticKeys.find(inputKey) != mapETen26StaticKeys.end();
+        return mapETen26StaticKeys.find(charStr) != mapETen26StaticKeys.end();
       case ofIBM:
-        return mapQwertyIBM.find(inputKey) != mapQwertyIBM.end();
+        return mapQwertyIBM.find(charStr) != mapQwertyIBM.end();
       case ofMiTAC:
-        return mapQwertyMiTAC.find(inputKey) != mapQwertyMiTAC.end();
+        return mapQwertyMiTAC.find(charStr) != mapQwertyMiTAC.end();
       case ofSeigyou:
-        return mapSeigyou.find(inputKey) != mapSeigyou.end();
+        return mapSeigyou.find(charStr) != mapSeigyou.end();
       case ofFakeSeigyou:
-        return mapFakeSeigyou.find(inputKey) != mapFakeSeigyou.end();
+        return mapFakeSeigyou.find(charStr) != mapFakeSeigyou.end();
       case ofStarlight:
-        return mapStarlightStaticKeys.find(inputKey) !=
+        return mapStarlightStaticKeys.find(charStr) !=
                mapStarlightStaticKeys.end();
       case ofAlvinLiu:
-        return mapAlvinLiuStaticKeys.find(inputKey) !=
+        return mapAlvinLiuStaticKeys.find(charStr) !=
                mapAlvinLiuStaticKeys.end();
       case ofWadeGilesPinyin:
-        return stringInclusion(mapWadeGilesPinyinKeys, inputKey);
+        return stringInclusion(mapWadeGilesPinyinKeys, charStr);
       case ofHanyuPinyin:
       case ofSecondaryPinyin:
       case ofYalePinyin:
       case ofHualuoPinyin:
       case ofUniversalPinyin:
-        return stringInclusion(mapArayuruPinyin, inputKey);
+        return stringInclusion(mapArayuruPinyin, charStr);
     }
     return false;
   }
