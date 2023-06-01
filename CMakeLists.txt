@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_library(TekkonLib Tekkon/Tekkon.hh Tekkon/main.cc)
 
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+        cmake_policy(SET CMP0135 NEW)
+endif()
+
 # Let CMake fetch Google Test for us.
 # https://gitee.com/mirrors/googletest/tree/main/googletest#incorporating-into-an-existing-cmake-project
 include(FetchContent)
