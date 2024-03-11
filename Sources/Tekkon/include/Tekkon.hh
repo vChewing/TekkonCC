@@ -1,26 +1,10 @@
 // (c) 2022 and onwards The vChewing Project (MIT-NTL License).
-/*
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-1. The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-2. No trademark license is granted to use the trade names, trademarks, service
-marks, or product names of Contributor, except as required to fulfill notice
-requirements above.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+// ====================
+// This code is released under the MIT license (SPDX-License-Identifier: MIT)
+// ... with NTL restriction stating that:
+// No trademark license is granted to use the trade names, trademarks, service
+// marks, or product names of Contributor, except as required to fulfill notice
+// requirements defined in MIT License.
 
 // ADVICE: Save as UTF8 without BOM signature!!!
 
@@ -29,7 +13,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 /// 那樣放在檔案末尾，就只能放在檔案開頭了。另外，Cpp 的 select case 語句是可以
 /// 將 std::string 拿來 switch 的，但必須做雜湊化處理（hashify）使其整數化。
 
-// This module conforms to Cpp20 standard. Use Clang-14 or higher to compile.
+// This module conforms to Cpp17 standard.
+// Clang-14 or higher is recommended for compilation.
+// If using Swift Package Manager to compile, use Swift 5.9 or newer.
 
 #ifndef TEKKON_HH_
 #define TEKKON_HH_
@@ -93,11 +79,11 @@ std::vector<T>& operator+=(std::vector<T>& x, std::vector<T>& y) {
 }
 
 // The following function is taken from boost internals.
-// License https://www.boost.org/users/license.html
-inline static unsigned utf8ByteCount(uint8_t theChar) {
+// License: https://www.boost.org/users/license.html
+inline static unsigned utf8ByteCount(unsigned theChar) {
   // if the most significant bit with a zero in it is in position
   // 8-N then there are N bytes in this UTF-8 sequence:
-  uint8_t mask = 0x80u;
+  unsigned mask = 0x80u;
   unsigned result = 0;
   while (theChar & mask) {
     ++result;
@@ -107,12 +93,12 @@ inline static unsigned utf8ByteCount(uint8_t theChar) {
 }
 
 // The following function is taken from boost internals.
-// License https://www.boost.org/users/license.html
+// License: https://www.boost.org/users/license.html
 inline static std::vector<std::string> splitByCodepoint(std::string input) {
   std::vector<std::string> arrReturned;
   auto netaIterated = input.cbegin();
   while (netaIterated != input.cend()) {
-    uint8_t count = utf8ByteCount(*netaIterated);
+    unsigned count = utf8ByteCount(*netaIterated);
     arrReturned.emplace_back(std::string{netaIterated, netaIterated + count});
     netaIterated += count;
   }
@@ -399,7 +385,7 @@ inline static std::vector<std::vector<std::string>>
             {"v1", "ǖ"},       {"v2", "ǘ"},       {"v3", "ǚ"},
             {"v4", "ǜ"}};
 
-// MARK, - Maps for Keyboard-to-Pinyin parsers
+// MARK: - Maps for Keyboard-to-Pinyin parsers
 
 /// 任何形式的拼音排列都會用到的陣列（韋氏拼音與趙元任國語羅馬字除外），
 /// 用 Strings 反而省事一些。
