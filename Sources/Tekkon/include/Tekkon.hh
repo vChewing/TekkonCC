@@ -1446,7 +1446,7 @@ inline static std::string cnvHanyuPinyinToTextBookStyle(
 /// 該函式負責將注音轉為教科書印刷的方式（先寫輕聲）。
 /// @param target 要拿來做轉換處理的讀音。
 /// @returns 經過轉換處理的讀音鏈。
-inline static std::string cnvPhonaToTextbookReading(std::string target) {
+inline static std::string cnvPhonaToTextbookStyle(std::string target) {
   std::string result = target;
   if (stringInclusion(result, "˙")) {
     // 輕聲記號需要 pop_back() 兩次才可以徹底清除。
@@ -1624,7 +1624,7 @@ class Composer {
       std::string valReturnZhuyin = value();
       replaceOccurrences(valReturnZhuyin, " ", "");
       if (isTextBookStyle) {
-        valReturnZhuyin = cnvPhonaToTextbookReading(valReturnZhuyin);
+        valReturnZhuyin = cnvPhonaToTextbookStyle(valReturnZhuyin);
       }
       // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
       // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。
@@ -1672,7 +1672,7 @@ class Composer {
   }
 
   /// 注拼槽內容是否可唸。
-  bool isPronouncable() {
+  bool isPronounceable() {
     return !vowel.isEmpty() || !semivowel.isEmpty() || !consonant.isEmpty();
   }
 
@@ -1916,17 +1916,18 @@ class Composer {
     updateRomajiBuffer();
   }
 
-  /// 處理一連串的按鍵輸入。
+  /// 處理一連串的按鍵輸入、且返回被處理之後的注音（陰平為空格）。
   ///
   /// @param givenSequence 傳入的 String 內容，用以處理一整串擊鍵輸入。
   /// @param isRomaji 若輸入的字串是基於西文字母的各種拼音的話，請啟用此選項。
-  void receiveSequence(std::string givenSequence = "", bool isRomaji = false) {
+  std::string receiveSequence(std::string givenSequence = "",
+                              bool isRomaji = false) {
     clear();
     if (!isRomaji) {
       for (char key : givenSequence) {
         receiveKey(key);
       }
-      return;
+      return value();
     }
     std::vector<std::string> dictResult = {};
     switch (parser) {
@@ -1958,13 +1959,6 @@ class Composer {
         break;
     }
     for (std::string phonabet : dictResult) receiveKeyFromPhonabet(phonabet);
-  }
-
-  /// 處理一連串的按鍵輸入、且返回被處理之後的注音（陰平為空格）。
-  ///
-  /// @param givenSequence 傳入的 String 內容，用以處理一整串擊鍵輸入。
-  std::string cnvSequence(std::string givenSequence = "") {
-    receiveSequence(givenSequence);
     return value();
   }
 
@@ -2008,17 +2002,17 @@ class Composer {
   ///
   /// 如果輸入法的辭典索引是漢語拼音的話，你可能用不上這個函式。
   /// @remark 警告：該字串結果不能為空，否則組字引擎會炸。
-  /// @param pronouncable 是否可以唸出。
-  std::string phonabetKeyForQuery(bool pronouncable) {
+  /// @param pronounceableOnly 是否可以唸出。
+  std::string phonabetKeyForQuery(bool pronounceableOnly) {
     std::string readingKey = getComposition();
-    bool validKeyGeneratable = false;
+    bool validKeyAvailable = false;
     if (!isPinyinMode()) {
-      validKeyGeneratable =
-          pronouncable ? isPronouncable() : !readingKey.empty();
+      validKeyAvailable =
+          pronounceableOnly ? isPronounceable() : !readingKey.empty();
     } else {
-      validKeyGeneratable = isPronouncable();
+      validKeyAvailable = isPronounceable();
     }
-    return validKeyGeneratable ? readingKey : "";
+    return validKeyAvailable ? readingKey : "";
   }
 
  protected:
@@ -2077,16 +2071,16 @@ class Composer {
 
     switch (hashify(key.c_str())) {
       case hashify("d"):
-        if (isPronouncable()) strReturn = ("˙");
+        if (isPronounceable()) strReturn = ("˙");
         break;
       case hashify("f"):
-        if (isPronouncable()) strReturn = ("ˊ");
+        if (isPronounceable()) strReturn = ("ˊ");
         break;
       case hashify("j"):
-        if (isPronouncable()) strReturn = ("ˇ");
+        if (isPronounceable()) strReturn = ("ˇ");
         break;
       case hashify("k"):
-        if (isPronouncable()) strReturn = ("ˋ");
+        if (isPronounceable()) strReturn = ("ˋ");
         break;
       case hashify("e"):
         if (consonant.value() == "ㄍ") consonant = Phonabet("ㄑ");
@@ -2157,16 +2151,16 @@ class Composer {
 
     switch (hashify(key.c_str())) {
       case hashify("d"):
-        if (isPronouncable()) strReturn = ("ˊ");
+        if (isPronounceable()) strReturn = ("ˊ");
         break;
       case hashify("f"):
-        if (isPronouncable()) strReturn = ("ˇ");
+        if (isPronounceable()) strReturn = ("ˇ");
         break;
       case hashify("s"):
-        if (isPronouncable()) strReturn = ("˙");
+        if (isPronounceable()) strReturn = ("˙");
         break;
       case hashify("j"):
-        if (isPronouncable()) strReturn = ("ˋ");
+        if (isPronounceable()) strReturn = ("ˋ");
         break;
       case hashify("a"):
         if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄟ");
@@ -2312,16 +2306,16 @@ class Composer {
 
     switch (hashify(key.c_str())) {
       case (hashify("e")):
-        if (isPronouncable()) strReturn = ("ˊ");
+        if (isPronounceable()) strReturn = ("ˊ");
         break;
       case hashify("r"):
-        if (isPronouncable()) strReturn = ("ˇ");
+        if (isPronounceable()) strReturn = ("ˇ");
         break;
       case hashify("d"):
-        if (isPronouncable()) strReturn = ("ˋ");
+        if (isPronounceable()) strReturn = ("ˋ");
         break;
       case hashify("y"):
-        if (isPronouncable()) strReturn = ("˙");
+        if (isPronounceable()) strReturn = ("˙");
         break;
       case hashify("b"):
         if (!consonant.isEmpty() || !semivowel.isEmpty()) strReturn = ("ㄝ");
@@ -2410,16 +2404,16 @@ class Composer {
 
     switch (hashify(key.c_str())) {
       case hashify("d"):
-        if (isPronouncable()) strReturn = ("˙");
+        if (isPronounceable()) strReturn = ("˙");
         break;
       case hashify("f"):
-        if (isPronouncable()) strReturn = ("ˊ");
+        if (isPronounceable()) strReturn = ("ˊ");
         break;
       case hashify("j"):
-        if (isPronouncable()) strReturn = ("ˇ");
+        if (isPronounceable()) strReturn = ("ˇ");
         break;
       case hashify("l"):
-        if (isPronouncable()) strReturn = ("ˋ");
+        if (isPronounceable()) strReturn = ("ˋ");
         break;
       case hashify("e"):
         if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")

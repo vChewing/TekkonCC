@@ -226,7 +226,7 @@ using namespace Tekkon;
 
   // Testing tool functions
   XCTAssertEqual(Tekkon::restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
-  XCTAssertEqual(Tekkon::cnvPhonaToTextbookReading("ㄓㄜ˙"), "˙ㄓㄜ");
+  XCTAssertEqual(Tekkon::cnvPhonaToTextbookStyle("ㄓㄜ˙"), "˙ㄓㄜ");
   XCTAssertEqual(Tekkon::cnvHanyuPinyinToPhona("bian4-le5-tian1"),
                  "ㄅㄧㄢˋ-ㄌㄜ˙-ㄊㄧㄢ");
 }
