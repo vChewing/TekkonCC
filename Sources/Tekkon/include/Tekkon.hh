@@ -2357,13 +2357,12 @@ class Composer {
         } else if (semivowel.value() != "ㄩ" && vowel.value() == "ㄡ") {
           vowel.clear();
           strReturn = ("ㄩ");
-        } else if (!semivowel.isEmpty())
+        } else if (!semivowel.isEmpty() ||
+                   !(consonant.value() == "ㄐ" || consonant.value() == "ㄑ" ||
+                     consonant.value() == "ㄒ"))
           strReturn = ("ㄡ");
         else {
-          strReturn = (consonant.value() == "ㄐ" || consonant.value() == "ㄑ" ||
-                       consonant.value() == "ㄒ")
-                          ? "ㄩ"
-                          : "ㄡ";
+          strReturn = ("ㄩ");
         }
         break;
       case hashify("u"):
