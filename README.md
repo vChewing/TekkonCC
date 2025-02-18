@@ -41,6 +41,22 @@ Regarding pinyin input support, we only support: Hanyu Pinyin, Secondary Pinyin,
 
 ## 著作權 (Credits)
 
-- Development by (c) 2022 and onwards The vChewing Project (MIT-NTL License).
+- Development by (c) 2022 and onwards The vChewing Project (LGPL v3.0 License or later).
 	- Original Swift developer: Shiki Suen
 	- C# and Cpp version developer: Shiki Suen
+
+## 著作權 (Credits)
+
+- Development by (c) 2022 and onwards The vChewing Project (LGPL v3.0 License or later).
+	- Original Swift developer: Shiki Suen
+	- C# and Cpp version developer: Shiki Suen
+
+```
+// (c) 2022 and onwards The vChewing Project (LGPL v3.0 License or later).
+// ====================
+// This code is released under the SPDX-License-Identifier: `LGPL-3.0-or-later`.
+```
+
+敝專案採雙授權發佈措施。除了 LGPLv3 以外，對商業使用者也提供不同的授權條款（比如允許閉源使用等）。詳情請[電郵聯絡作者](shikisuen@yeah.net)。
+
+$ EOF.
