@@ -17,12 +17,8 @@
 #define TEKKON_HH_
 
 #include <algorithm>
-#include <cassert>
-#include <iostream>
 #include <map>
-#include <numeric>
 #include <regex>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
