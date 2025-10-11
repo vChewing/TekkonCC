@@ -7,8 +7,10 @@
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 
-#import "../../TestAssets_Tekkon/TekkonTestData.hh"
+#import "../TestAssets_Tekkon/TekkonTestData.hh"
 #import "Tekkon.hh"
+
+#include <sstream>
 
 using namespace Tekkon;
 

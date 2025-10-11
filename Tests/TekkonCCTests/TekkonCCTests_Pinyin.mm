@@ -326,8 +326,6 @@ using namespace Tekkon;
   XCTAssertTrue(toneMarkerIndicator);
 }
 
-@end
-
 // =========== PINYIN TRIE TESTS ===========
 
 // Test PinyinTrie basic functionality
