@@ -103,16 +103,46 @@ When working with phonabet internals:
 
 ## Testing
 
-All 16 existing unit tests pass without modification:
+All unit tests pass (23 tests total):
 - 4 basic tests
 - 6 intermediate tests (pinyin handling)
 - 6 advanced tests (keyboard arrangements)
+- 2 arrangement tests (using centralized data)
+- 5 pinyin/trie tests (new PinyinTrie functionality)
 
-## Future Work (Optional)
+100% test pass rate maintained throughout migration.
 
-The following features from Swift v1.7.0 are not yet ported:
-- Test data consolidation (centralized test data files)
-- PinyinTrie and Chopper features for advanced pinyin processing
-- Test file restructuring (TekkonTests_Arrangements, TekkonTests_Basic, TekkonTests_Pinyin)
+## Additional Features Ported (v1.7.0 Complete)
 
-These are optional enhancements and not required for v1.7.0 compatibility.
+### PinyinTrie and Chopper
+
+Implemented the complete PinyinTrie class for intelligent pinyin processing:
+
+**Features:**
+- `PinyinTrie` class with trie-based structure for efficient pinyin-to-zhuyin mapping
+- `chop()` method: Intelligently segments continuous simplified pinyin strings
+  - Example: "shjdaz" → ["sh", "j", "da", "z"]
+  - Useful for smart pinyin input like Sogou Pinyin
+- `deductChoppedPinyinToZhuyin()`: Converts chopped pinyin segments to zhuyin candidates
+  - Example: ["b", "yue", "z"] → ["ㄅ", "ㄩㄝ", "ㄓ&ㄗ"]
+- `insert()`, `search()`: Core trie operations for pinyin lookup
+- Support for all pinyin parsers (Hanyu, Secondary, Yale, Hualuo, Universal, Wade-Giles)
+
+**Use Cases:**
+- Smart/fuzzy pinyin input
+- Abbreviated pinyin support
+- Pinyin auto-segmentation
+
+### Test Data Consolidation
+
+**Centralized Test Data:**
+- Created `Tests/TestAssets_Tekkon/TekkonTestData.hh`
+- Ported 1486 lines of test data from Swift v1.7.0
+- Uses C++ raw string literals for maintainability
+- Includes `testTable4DynamicLayouts` with comprehensive keyboard layout test cases
+
+**Test Structure Reorganization:**
+- `GTests/TekkonTests_Arrangements.cc`: Tests keyboard arrangements using centralized data
+- `GTests/TekkonTests_Pinyin.cc`: Tests PinyinTrie and Chopper functionality
+- Dynamic test generation from centralized data (matching Swift v1.7.0 approach)
+- Modular test organization for better maintainability
