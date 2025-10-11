@@ -8,6 +8,15 @@
 /// 因為 Cpp 講究事物相生順序，所以很多龐大的陣列常數不能像 Swift 原版的鐵恨引擎
 /// 那樣放在檔案末尾，就只能放在檔案開頭了。另外，Cpp 的 select case 語句是可以
 /// 將 std::string 拿來 switch 的，但必須做雜湊化處理（hashify）使其整數化。
+///
+/// Version 1.7.0 Changes (Ported from Swift Tekkon v1.7.0):
+/// - Core data type changed from std::string to char32_t (Unicode scalar) for phonabets
+/// - allowedConsonants, allowedSemivowels, allowedVowels, allowedIntonations now use char32_t
+/// - Phonabet struct now stores char32_t internally (scalarValue)
+/// - Added Phonabet(char32_t) constructor
+/// - Added receiveKeyFromPhonabet(char32_t) method
+/// - Composer properties (consonant, semivowel, vowel, intonation) are public for read access
+///   but should only be modified through receiveKey/receiveSequence methods
 
 // This module conforms to Cpp17 standard.
 // Clang-14 or higher is recommended for compilation.
@@ -1631,13 +1640,17 @@ struct Phonabet {
 class Composer {
  public:
   // 聲介韻調。寫這樣囉唆是為了直接在這裡初期化。
+  // Note: These are public for read access, but should not be modified directly.
+  // Use receiveKey(), receiveSequence(), or clear() to modify the composer state.
   Phonabet consonant = Phonabet(), semivowel = Phonabet(), vowel = Phonabet(),
            intonation = Phonabet();
 
   /// 為拉丁字母專用的組音區。
+  /// Note: This is public for read access, but should not be modified directly.
   std::string romajiBuffer;
 
   /// 注音排列種類。預設情況下是大千排列（Windows / macOS 預設注音排列）。
+  /// Note: This is public for read access. Use ensureParser() to change the parser.
   MandarinParser parser = ofDachen;
 
   /// 是否對錯誤的注音讀音組合做出自動糾正處理。
