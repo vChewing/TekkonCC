@@ -33,6 +33,28 @@ inline static std::string charToString(char theChar) {
   return result;
 }
 
+// Convert char32_t (Unicode scalar) to UTF-8 std::string
+inline static std::string char32ToString(char32_t scalar) {
+  if (scalar == 0) return "";
+  std::string result;
+  if (scalar < 0x80) {
+    result += static_cast<char>(scalar);
+  } else if (scalar < 0x800) {
+    result += static_cast<char>(0xC0 | (scalar >> 6));
+    result += static_cast<char>(0x80 | (scalar & 0x3F));
+  } else if (scalar < 0x10000) {
+    result += static_cast<char>(0xE0 | (scalar >> 12));
+    result += static_cast<char>(0x80 | ((scalar >> 6) & 0x3F));
+    result += static_cast<char>(0x80 | (scalar & 0x3F));
+  } else if (scalar < 0x110000) {
+    result += static_cast<char>(0xF0 | (scalar >> 18));
+    result += static_cast<char>(0x80 | ((scalar >> 12) & 0x3F));
+    result += static_cast<char>(0x80 | ((scalar >> 6) & 0x3F));
+    result += static_cast<char>(0x80 | (scalar & 0x3F));
+  }
+  return result;
+}
+
 inline static void replaceOccurrences(std::string& data, std::string toSearch,
                                       std::string replaceStr) {
   size_t position = data.find(toSearch);
@@ -138,24 +160,24 @@ enum MandarinParser : int {
 };
 
 /// 引擎僅接受這些記號作為聲母
-inline static std::vector<std::string> allowedConsonants = {
-    "ㄅ", "ㄆ", "ㄇ", "ㄈ", "ㄉ", "ㄊ", "ㄋ", "ㄌ", "ㄍ", "ㄎ", "ㄏ",
-    "ㄐ", "ㄑ", "ㄒ", "ㄓ", "ㄔ", "ㄕ", "ㄖ", "ㄗ", "ㄘ", "ㄙ"};
+inline static std::vector<char32_t> allowedConsonants = {
+    U'ㄅ', U'ㄆ', U'ㄇ', U'ㄈ', U'ㄉ', U'ㄊ', U'ㄋ', U'ㄌ', U'ㄍ', U'ㄎ', U'ㄏ',
+    U'ㄐ', U'ㄑ', U'ㄒ', U'ㄓ', U'ㄔ', U'ㄕ', U'ㄖ', U'ㄗ', U'ㄘ', U'ㄙ'};
 
 /// 引擎僅接受這些記號作為介母
-inline static std::vector<std::string> allowedSemivowels = {"ㄧ", "ㄨ", "ㄩ"};
+inline static std::vector<char32_t> allowedSemivowels = {U'ㄧ', U'ㄨ', U'ㄩ'};
 
 /// 引擎僅接受這些記號作為韻母
-inline static std::vector<std::string> allowedVowels = {
-    "ㄚ", "ㄛ", "ㄜ", "ㄝ", "ㄞ", "ㄟ", "ㄠ",
-    "ㄡ", "ㄢ", "ㄣ", "ㄤ", "ㄥ", "ㄦ"};
+inline static std::vector<char32_t> allowedVowels = {
+    U'ㄚ', U'ㄛ', U'ㄜ', U'ㄝ', U'ㄞ', U'ㄟ', U'ㄠ',
+    U'ㄡ', U'ㄢ', U'ㄣ', U'ㄤ', U'ㄥ', U'ㄦ'};
 
 /// 引擎僅接受這些記號作為聲調
-inline static std::vector<std::string> allowedIntonations = {" ", "ˊ", "ˇ", "ˋ",
-                                                             "˙"};
+inline static std::vector<char32_t> allowedIntonations = {U' ', U'ˊ', U'ˇ', U'ˋ',
+                                                          U'˙'};
 
 /// 引擎僅接受這些記號作為注音（聲介韻調四個集合加起來）
-inline static std::vector<std::string> allowedPhonabets =
+inline static std::vector<char32_t> allowedPhonabets =
     allowedConsonants + allowedSemivowels + allowedVowels + allowedIntonations;
 
 /// 原始轉換對照表資料貯存專用佇列（數字標調格式）
@@ -1506,57 +1528,100 @@ inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
 // MARK: - Phonabet Structure
 
 /// 注音符號型別。本身與字串差不多，但卻只能被設定成一個注音符號字符。
-/// 然後會根據自身的 value 的內容值自動計算自身的 PhoneType 類型（聲介韻調假）。
-/// 如果遇到被設為多個字符、或者字符不對的情況的話，value 會被清空、PhoneType
-/// 會變成 null。 賦值時最好直接重新 init 且一直用 let 來初期化 Phonabet。 其實
-/// value 對外只讀，對內的話另有 valueStorage 代為存儲內容。這樣比較安全一些。
+/// 然後會根據自身的 scalarValue 的內容值自動計算自身的 PhoneType 類型（聲介韻調假）。
+/// 如果遇到被設為多個字符、或者字符不對的情況的話，scalarValue 會被清空、PhoneType
+/// 會變成 null。 賦值時最好直接重新 init 且一直用 let 來初期化 Phonabet。
 struct Phonabet {
  public:
   PhoneType type = null;
-  std::string value() { return strStorage; }
-  bool isEmpty() { return value().empty(); }
+  
+  /// 取得字串表示的值
+  std::string value() {
+    if (type == null) return "";
+    return char32ToString(scalarValue);
+  }
+  bool isEmpty() { return type == null; }
   bool isValid() { return type != null; }
+  
+  /// 取得 Unicode scalar 值
+  char32_t scalar() { return scalarValue; }
 
   ~Phonabet() { clear(); }
+  
   /// 初期化，會根據傳入的 input 字串參數來自動判定自身的 PhoneType 類型屬性值。
   explicit Phonabet(std::string input = "") {
-    strStorage = input;
+    if (!input.empty()) {
+      auto chars = splitByCodepoint(input);
+      if (!chars.empty()) {
+        // Convert first codepoint to char32_t
+        std::string firstChar = chars[0];
+        if (firstChar.size() > 0) {
+          // Simple UTF-8 to char32_t conversion
+          const unsigned char* bytes = reinterpret_cast<const unsigned char*>(firstChar.c_str());
+          if ((bytes[0] & 0x80) == 0) {
+            scalarValue = bytes[0];
+          } else if ((bytes[0] & 0xE0) == 0xC0 && firstChar.size() >= 2) {
+            scalarValue = ((bytes[0] & 0x1F) << 6) | (bytes[1] & 0x3F);
+          } else if ((bytes[0] & 0xF0) == 0xE0 && firstChar.size() >= 3) {
+            scalarValue = ((bytes[0] & 0x0F) << 12) | ((bytes[1] & 0x3F) << 6) | (bytes[2] & 0x3F);
+          } else if ((bytes[0] & 0xF8) == 0xF0 && firstChar.size() >= 4) {
+            scalarValue = ((bytes[0] & 0x07) << 18) | ((bytes[1] & 0x3F) << 12) | 
+                         ((bytes[2] & 0x3F) << 6) | (bytes[3] & 0x3F);
+          }
+        }
+      }
+    }
+    ensureType();
+  }
+  
+  /// 初期化，會根據傳入的 Unicode scalar 來自動判定自身的 PhoneType 類型屬性值。
+  explicit Phonabet(char32_t input) {
+    if (contains(allowedPhonabets, input)) {
+      scalarValue = input;
+    }
     ensureType();
   }
 
   /// 自我清空內容。
   void clear() {
-    strStorage.clear();
+    scalarValue = U'~';
     type = null;
   };
 
   /// 自我變換資料值。
   ///
-  /// @param strOf 要取代的內容。
-  /// @param strWith 要取代成的內容。
-  void selfReplace(std::string strOf, std::string strWith) {
-    if (strStorage == strOf) {
-      strStorage = strWith;
+  /// @param strOf 要取代的內容 (Unicode scalar)。
+  /// @param strWith 要取代成的內容 (Unicode scalar)。
+  void selfReplace(char32_t strOf, char32_t strWith = U'~') {
+    if (scalarValue == strOf) {
+      scalarValue = strWith;
       ensureType();
     }
   }
+  
+  /// 設定新的值
+  /// @param newValue 新的 Unicode scalar 值
+  void setValue(char32_t newValue) {
+    scalarValue = newValue;
+    ensureType();
+  }
 
  protected:
-  std::string strStorage;
+  char32_t scalarValue = U'~';
 
   /// 判定自身的 PhoneType 類型屬性值。
   void ensureType() {
-    if (contains(allowedConsonants, strStorage)) {
+    if (contains(allowedConsonants, scalarValue)) {
       type = consonant;
-    } else if (contains(allowedSemivowels, strStorage)) {
+    } else if (contains(allowedSemivowels, scalarValue)) {
       type = semivowel;
-    } else if (contains(allowedVowels, strStorage)) {
+    } else if (contains(allowedVowels, scalarValue)) {
       type = vowel;
-    } else if (contains(allowedIntonations, strStorage)) {
+    } else if (contains(allowedIntonations, scalarValue)) {
       type = intonation;
     } else {
       type = null;
-      strStorage.clear();
+      scalarValue = U'~';
     }
   }
 };
@@ -1816,51 +1881,55 @@ class Composer {
   /// 主要就是將注音符號拆分辨識且分配到正確的貯存位置而已。
   ///
   /// @param phonabet 傳入的單個注音符號字串。
-  void receiveKeyFromPhonabet(std::string phonabet = "") {
+  /// 接受傳入的按鍵訊號時的處理，處理對象為單個注音符號（Unicode scalar）。
+  /// 主要就是將注音符號拆分辨識且分配到正確的貯存位置而已。
+  ///
+  /// @param phonabet 傳入的單個注音符號 Unicode scalar。
+  void receiveKeyFromPhonabet(char32_t phonabet) {
     Phonabet thePhone = Phonabet(phonabet);
     if (phonabetCombinationCorrectionEnabled) {
-      switch (hashify(phonabet.c_str())) {
-        case hashify("ㄧ"):
-        case hashify("ㄩ"):
-          if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
+      switch (phonabet) {
+        case U'ㄧ':
+        case U'ㄩ':
+          if (vowel.scalar() == U'ㄜ') vowel = Phonabet(U'ㄝ');
           break;
-        case hashify("ㄜ"):
-          if (semivowel.value() == "ㄨ") semivowel = Phonabet("ㄩ");
-          if (semivowel.value() == "ㄧ" || semivowel.value() == "ㄩ")
-            thePhone = Phonabet("ㄝ");
+        case U'ㄜ':
+          if (semivowel.scalar() == U'ㄨ') semivowel = Phonabet(U'ㄩ');
+          if (semivowel.scalar() == U'ㄧ' || semivowel.scalar() == U'ㄩ')
+            thePhone = Phonabet(U'ㄝ');
           break;
-        case hashify("ㄝ"):
-          if (semivowel.value() == "ㄨ") semivowel = Phonabet("ㄩ");
+        case U'ㄝ':
+          if (semivowel.scalar() == U'ㄨ') semivowel = Phonabet(U'ㄩ');
           break;
-        case hashify("ㄛ"):
-        case hashify("ㄥ"):
-          if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
-               consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
-              semivowel.value() == "ㄨ")
+        case U'ㄛ':
+        case U'ㄥ':
+          if ((consonant.scalar() == U'ㄅ' || consonant.scalar() == U'ㄆ' ||
+               consonant.scalar() == U'ㄇ' || consonant.scalar() == U'ㄈ') &&
+              semivowel.scalar() == U'ㄨ')
             semivowel.clear();
           break;
-        case hashify("ㄟ"):
-          if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
-              (semivowel.value() == "ㄨ"))
+        case U'ㄟ':
+          if ((consonant.scalar() == U'ㄋ' || consonant.scalar() == U'ㄌ') &&
+              (semivowel.scalar() == U'ㄨ'))
             semivowel.clear();
           break;
-        case hashify("ㄨ"):
-          if ((consonant.value() == "ㄅ" || consonant.value() == "ㄆ" ||
-               consonant.value() == "ㄇ" || consonant.value() == "ㄈ") &&
-              (vowel.value() == "ㄛ" || vowel.value() == "ㄥ"))
+        case U'ㄨ':
+          if ((consonant.scalar() == U'ㄅ' || consonant.scalar() == U'ㄆ' ||
+               consonant.scalar() == U'ㄇ' || consonant.scalar() == U'ㄈ') &&
+              (vowel.scalar() == U'ㄛ' || vowel.scalar() == U'ㄥ'))
             vowel.clear();
-          if ((consonant.value() == "ㄋ" || consonant.value() == "ㄌ") &&
-              (vowel.value() == "ㄟ"))
+          if ((consonant.scalar() == U'ㄋ' || consonant.scalar() == U'ㄌ') &&
+              (vowel.scalar() == U'ㄟ'))
             vowel.clear();
-          if (vowel.value() == "ㄜ") vowel = Phonabet("ㄝ");
-          if (vowel.value() == "ㄝ") thePhone = Phonabet("ㄩ");
+          if (vowel.scalar() == U'ㄜ') vowel = Phonabet(U'ㄝ');
+          if (vowel.scalar() == U'ㄝ') thePhone = Phonabet(U'ㄩ');
           break;
-        case hashify("ㄅ"):
-        case hashify("ㄆ"):
-        case hashify("ㄇ"):
-        case hashify("ㄈ"):
-          if (semivowel.value() + vowel.value() == "ㄨㄛ" ||
-              semivowel.value() + vowel.value() == "ㄨㄥ")
+        case U'ㄅ':
+        case U'ㄆ':
+        case U'ㄇ':
+        case U'ㄈ':
+          if ((semivowel.scalar() == U'ㄨ' && vowel.scalar() == U'ㄛ') ||
+              (semivowel.scalar() == U'ㄨ' && vowel.scalar() == U'ㄥ'))
             semivowel.clear();
           break;
         default:
@@ -1868,20 +1937,20 @@ class Composer {
       }
       if ((thePhone.type == PhoneType::vowel ||
            thePhone.type == PhoneType::intonation) &&
-          (consonant.value() == "ㄓ" || consonant.value() == "ㄔ" ||
-           consonant.value() == "ㄕ" || consonant.value() == "ㄗ" ||
-           consonant.value() == "ㄘ" || consonant.value() == "ㄙ")) {
-        switch (hashify(semivowel.value().c_str())) {
-          case hashify("ㄧ"):
+          (consonant.scalar() == U'ㄓ' || consonant.scalar() == U'ㄔ' ||
+           consonant.scalar() == U'ㄕ' || consonant.scalar() == U'ㄗ' ||
+           consonant.scalar() == U'ㄘ' || consonant.scalar() == U'ㄙ')) {
+        switch (semivowel.scalar()) {
+          case U'ㄧ':
             semivowel.clear();
             break;
-          case hashify("ㄩ"):
-            if (consonant.value() == "ㄓ" || consonant.value() == "ㄗ")
-              consonant = Phonabet("ㄐ");
-            if (consonant.value() == "ㄔ" || consonant.value() == "ㄘ")
-              consonant = Phonabet("ㄑ");
-            if (consonant.value() == "ㄕ" || consonant.value() == "ㄙ")
-              consonant = Phonabet("ㄒ");
+          case U'ㄩ':
+            if (consonant.scalar() == U'ㄓ' || consonant.scalar() == U'ㄗ')
+              consonant = Phonabet(U'ㄐ');
+            if (consonant.scalar() == U'ㄔ' || consonant.scalar() == U'ㄘ')
+              consonant = Phonabet(U'ㄑ');
+            if (consonant.scalar() == U'ㄕ' || consonant.scalar() == U'ㄙ')
+              consonant = Phonabet(U'ㄒ');
             break;
           default:
             break;
@@ -1906,6 +1975,36 @@ class Composer {
         break;
     }
     updateRomajiBuffer();
+  }
+  
+  /// 接受傳入的按鍵訊號時的處理，處理對象為單個注音符號（字串版本，為了向後兼容）。
+  /// 主要就是將注音符號拆分辨識且分配到正確的貯存位置而已。
+  ///
+  /// @param phonabet 傳入的單個注音符號字串。
+  void receiveKeyFromPhonabet(std::string phonabet = "") {
+    if (phonabet.empty()) return;
+    // Convert first character to char32_t and call the scalar version
+    auto chars = splitByCodepoint(phonabet);
+    if (!chars.empty()) {
+      std::string firstChar = chars[0];
+      if (firstChar.size() > 0) {
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(firstChar.c_str());
+        char32_t scalar = 0;
+        if ((bytes[0] & 0x80) == 0) {
+          scalar = bytes[0];
+        } else if ((bytes[0] & 0xE0) == 0xC0 && firstChar.size() >= 2) {
+          scalar = ((bytes[0] & 0x1F) << 6) | (bytes[1] & 0x3F);
+        } else if ((bytes[0] & 0xF0) == 0xE0 && firstChar.size() >= 3) {
+          scalar = ((bytes[0] & 0x0F) << 12) | ((bytes[1] & 0x3F) << 6) | (bytes[2] & 0x3F);
+        } else if ((bytes[0] & 0xF8) == 0xF0 && firstChar.size() >= 4) {
+          scalar = ((bytes[0] & 0x07) << 18) | ((bytes[1] & 0x3F) << 12) | 
+                   ((bytes[2] & 0x3F) << 6) | (bytes[3] & 0x3F);
+        }
+        if (scalar != 0) {
+          receiveKeyFromPhonabet(scalar);
+        }
+      }
+    }
   }
 
   /// 處理一連串的按鍵輸入、且返回被處理之後的注音（陰平為空格）。
