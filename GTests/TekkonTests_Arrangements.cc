@@ -2,11 +2,12 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `LGPL-3.0-or-later`.
 
+#include <sstream>
+#include <vector>
+
 #include "../Sources/Tekkon/include/Tekkon.hh"
 #include "../Tests/TestAssets_Tekkon/TekkonTestData.hh"
 #include "gtest/gtest.h"
-#include <sstream>
-#include <vector>
 
 namespace Tekkon {
 
@@ -33,16 +34,18 @@ struct SubTestCase {
   MandarinParser parser;
   std::string typing;
   std::string expected;
-  
+
   SubTestCase(MandarinParser p, const std::string& t, const std::string& e)
-      : parser(p), typing(replaceUnderscores(t)), expected(replaceUnderscores(e)) {}
-  
+      : parser(p),
+        typing(replaceUnderscores(t)),
+        expected(replaceUnderscores(e)) {}
+
   bool verify() {
     Composer composer("", parser);
     std::string strResult = composer.receiveSequence(typing);
     if (strResult == expected) return true;
-    
-    std::cout << "MISMATCH: \"" << typing << "\" -> \"" << strResult 
+
+    std::cout << "MISMATCH: \"" << typing << "\" -> \"" << strResult
               << "\" != \"" << expected << "\"" << std::endl;
     return false;
   }
@@ -52,16 +55,17 @@ struct SubTestCase {
 TEST(TekkonTests_Arrangements, QwertyDachenKeys) {
   Composer c("", ofDachen);
   int counter = 0;
-  
-  auto checkEq = [&](const std::string& keyStrokes, const std::string& expected) {
+
+  auto checkEq = [&](const std::string& keyStrokes,
+                     const std::string& expected) {
     std::string result = c.receiveSequence(keyStrokes);
     if (result != expected) {
-      std::cout << "MISMATCH (Dachen): \"" << keyStrokes << "\" -> \"" 
-                << result << "\" != \"" << expected << "\"" << std::endl;
+      std::cout << "MISMATCH (Dachen): \"" << keyStrokes << "\" -> \"" << result
+                << "\" != \"" << expected << "\"" << std::endl;
       counter++;
     }
   };
-  
+
   checkEq(" ", " ");
   checkEq("18 ", "ㄅㄚ ");
   checkEq("m,4", "ㄩㄝˋ");
@@ -77,7 +81,7 @@ TEST(TekkonTests_Arrangements, QwertyDachenKeys) {
   checkEq("hl3", "ㄘㄠˇ");
   checkEq("5 ", "ㄓ ");
   checkEq("193", "ㄅㄞˇ");
-  
+
   ASSERT_EQ(counter, 0);
 }
 
@@ -85,47 +89,49 @@ TEST(TekkonTests_Arrangements, QwertyDachenKeys) {
 TEST(TekkonTests_Arrangements, DynamicKeyLayouts) {
   std::string testData = TekkonTestData::testTable4DynamicLayouts;
   std::vector<std::string> lines = splitString(testData, '\n');
-  
+
   // Dynamic parsers to test
-  std::vector<MandarinParser> dynamicParsers = {
-    ofDachen26, ofETen26, ofHsu, ofStarlight, ofAlvinLiu
-  };
-  
+  std::vector<MandarinParser> dynamicParsers = {ofDachen26, ofETen26, ofHsu,
+                                                ofStarlight, ofAlvinLiu};
+
   for (size_t parserIdx = 0; parserIdx < dynamicParsers.size(); parserIdx++) {
     MandarinParser parser = dynamicParsers[parserIdx];
     std::vector<SubTestCase> testCases;
-    
+
     bool isTitleLine = true;
     for (const auto& line : lines) {
       if (line.empty()) continue;
-      
+
       if (isTitleLine) {
         isTitleLine = false;
         continue;
       }
-      
+
       std::vector<std::string> cells = splitString(line, ' ');
-      if (cells.size() < 6) continue;  // Need at least expected + 5 parser columns
-      
+      if (cells.size() < 6)
+        continue;  // Need at least expected + 5 parser columns
+
       std::string expected = cells[0];
-      // Column index: 0=expected, 1=Dachen26, 2=ETen26, 3=Hsu, 4=Starlight, 5=AlvinLiu
+      // Column index: 0=expected, 1=Dachen26, 2=ETen26, 3=Hsu, 4=Starlight,
+      // 5=AlvinLiu
       std::string typing = cells[parserIdx + 1];
-      
+
       if (!typing.empty() && typing[0] != '`') {
         testCases.emplace_back(parser, typing, expected);
       }
     }
-    
-    std::cout << " -> [Tekkon] Testing parser " << static_cast<int>(parser) << "..." << std::endl;
-    
+
+    std::cout << " -> [Tekkon] Testing parser " << static_cast<int>(parser)
+              << "..." << std::endl;
+
     int failureCount = 0;
     for (auto& testCase : testCases) {
       if (!testCase.verify()) {
         failureCount++;
       }
     }
-    
-    ASSERT_EQ(failureCount, 0) << "Parser " << static_cast<int>(parser) 
+
+    ASSERT_EQ(failureCount, 0) << "Parser " << static_cast<int>(parser)
                                << " failed with " << failureCount << " errors";
   }
 }
