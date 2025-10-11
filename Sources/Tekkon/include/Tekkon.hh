@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <map>
 #include <regex>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -2658,6 +2659,305 @@ class Composer {
       default:
         break;
     }
+  }
+};
+
+// MARK: - PinyinTrie
+
+/// 用來處理拼音轉注音的字首樹實作。
+class PinyinTrie {
+ public:
+  /// Trie 節點結構
+  struct TNode {
+    int id = -1;
+    std::vector<std::string> entries;
+    std::string character;
+    std::string readingKey;
+    std::map<std::string, int> children;  // 字符 -> 子節點ID映射
+
+    TNode() = default;
+    TNode(int id, const std::string& character = "", const std::string& readingKey = "")
+        : id(id), character(character), readingKey(readingKey) {}
+  };
+
+  MandarinParser parser;
+  TNode root;
+  std::map<int, TNode> nodes;  // 節點辭典，以id為索引
+  std::vector<std::string> allPossibleReadings;
+
+  /// 初始化 PinyinTrie
+  explicit PinyinTrie(MandarinParser parser) : parser(parser) {
+    root.id = 0;
+    root.character = "";
+    nodes[0] = root;
+
+    // 根據 parser 建立所有可能的讀音列表
+    updateAllPossibleReadings();
+
+    // Key 是拼音，Value 是注音，所以要反過來建樹
+    const std::map<std::string, std::string>* table = nullptr;
+    switch (parser) {
+      case ofHanyuPinyin:
+        table = &mapHanyuPinyin;
+        break;
+      case ofSecondaryPinyin:
+        table = &mapSecondaryPinyin;
+        break;
+      case ofYalePinyin:
+        table = &mapYalePinyin;
+        break;
+      case ofHualuoPinyin:
+        table = &mapHualuoPinyin;
+        break;
+      case ofUniversalPinyin:
+        table = &mapUniversalPinyin;
+        break;
+      case ofWadeGilesPinyin:
+        table = &mapWadeGilesPinyin;
+        break;
+      default:
+        break;
+    }
+
+    if (table) {
+      for (const auto& pair : *table) {
+        insert(pair.first, pair.second);
+      }
+    }
+  }
+
+  /// 插入一個拼音到注音的映射
+  void insert(const std::string& key, const std::string& entry) {
+    TNode* currentNode = &nodes[0];
+    int currentNodeID = 0;
+
+    // 遍歷關鍵字的每個字符
+    for (char c : key) {
+      std::string charStr(1, c);
+      
+      auto it = currentNode->children.find(charStr);
+      if (it != currentNode->children.end() && nodes.count(it->second)) {
+        // 有效的子節點已存在，繼續遍歷
+        currentNodeID = it->second;
+        currentNode = &nodes[currentNodeID];
+      } else {
+        // 創建新的子節點
+        int newNodeID = static_cast<int>(nodes.size());
+        TNode newNode(newNodeID, charStr);
+        
+        // 更新關係
+        currentNode->children[charStr] = newNodeID;
+        nodes[newNodeID] = newNode;
+        
+        // 更新當前節點
+        currentNode = &nodes[newNodeID];
+        currentNodeID = newNodeID;
+      }
+    }
+
+    // 在最終節點添加詞條
+    currentNode->readingKey = key;
+    currentNode->entries.push_back(entry);
+  }
+
+  /// 搜索給定的 key，返回所有匹配的注音
+  std::vector<std::string> search(const std::string& key) {
+    TNode* currentNode = &nodes[0];
+    
+    for (char c : key) {
+      std::string charStr(1, c);
+      auto it = currentNode->children.find(charStr);
+      if (it == currentNode->children.end() || !nodes.count(it->second)) {
+        return {};
+      }
+      currentNode = &nodes[it->second];
+    }
+
+    return collectAllDescendantEntries(*currentNode);
+  }
+
+  /// 用來像智能狂拼/搜狗拼音那樣處理一個連續的簡拼字串、切割成多個可能的合理讀音前綴。
+  ///
+  /// 比如說全拼「shi4jie4da4zhan4」可能會簡拼成「shjdaz」。
+  /// 此時的理想切片結果是：["sh","j","da","z"]。
+  std::vector<std::string> chop(const std::string& readingComplex) {
+    std::vector<std::string> result;
+    int complexLength = static_cast<int>(readingComplex.length());
+    
+    int longestReadingLength = allPossibleReadings.empty() ? 1 : static_cast<int>(allPossibleReadings[0].length());
+    int maxScopeSize = std::min(complexLength, longestReadingLength);
+    int currentPosition = 0;
+
+    while (currentPosition < complexLength) {
+      bool foundMatch = false;
+      
+      // 嘗試從最長的可能前綴開始比對
+      int longPossibleScopeSize = std::min(maxScopeSize, complexLength - currentPosition);
+      
+      for (int scopeSize = longPossibleScopeSize; scopeSize >= 1; scopeSize--) {
+        int endPosition = currentPosition + scopeSize;
+        if (endPosition > complexLength) {
+          continue;
+        }
+
+        std::string currentBlob = readingComplex.substr(currentPosition, scopeSize);
+        
+        // 檢查是否有任何讀音以這個字串開頭
+        for (const auto& currentReading : allPossibleReadings) {
+          if (currentReading.find(currentBlob) == 0) {  // hasPrefix
+            result.push_back(currentBlob);
+            currentPosition = endPosition;
+            foundMatch = true;
+            break;
+          }
+        }
+        
+        if (foundMatch) break;
+      }
+
+      // 如果沒找到相符的條目，將當前字符作為單獨的一項
+      if (!foundMatch) {
+        result.push_back(readingComplex.substr(currentPosition, 1));
+        currentPosition++;
+      }
+    }
+
+    return result;
+  }
+
+  /// 拿已經 chop 段切過的拼音來算出可能的注音 chop 結果。單個拼音 chop 可能會對應多個注音。
+  ///
+  /// 例：當前 parser 是漢語拼音的話，當給定參數如下時：
+  /// chopped: ["b", "yue", "z", "q", "s", "l", "l"]
+  ///
+  /// 期許結果是：
+  /// [["ㄅ"], ["ㄩㄝ"], ["ㄓ", "ㄗ"], ["ㄑ"], ["ㄕ", "ㄙ"], ["ㄌ"], ["ㄌ"]]
+  std::vector<std::string> deductChoppedPinyinToZhuyin(
+      const std::vector<std::string>& chopped,
+      char chopCaseSeparator = '&',
+      bool initialZhuyinOnly = true) {
+    
+    if (parser < 100) {  // Not pinyin
+      return chopped;
+    }
+
+    std::vector<std::string> choppedZhuyinCandidates;
+
+    for (const auto& slice : chopped) {
+      auto fetched = search(slice);
+
+      switch (fetched.size()) {
+        case 0:
+          choppedZhuyinCandidates.push_back(slice);
+          break;
+        case 1:
+          choppedZhuyinCandidates.push_back(fetched[0]);
+          break;
+        default: {
+          // 去重並排序
+          std::vector<std::string> uniqueFetched = fetched;
+          std::sort(uniqueFetched.begin(), uniqueFetched.end());
+          uniqueFetched.erase(std::unique(uniqueFetched.begin(), uniqueFetched.end()),
+                              uniqueFetched.end());
+          
+          // 如果 initialZhuyinOnly 為 true，只保留聲母部分
+          if (initialZhuyinOnly) {
+            std::vector<std::string> prefixes;
+            for (int i = 3; i >= 1; i--) {
+              if (uniqueFetched.size() <= static_cast<size_t>(i)) break;
+              
+              std::set<std::string> prefixSet;
+              for (const auto& item : fetched) {
+                auto split = splitByCodepoint(item);
+                if (!split.empty() && split.size() >= static_cast<size_t>(i)) {
+                  std::string prefix;
+                  for (size_t j = 0; j < static_cast<size_t>(i) && j < split.size(); j++) {
+                    prefix += split[j];
+                  }
+                  prefixSet.insert(prefix);
+                }
+              }
+              uniqueFetched.assign(prefixSet.begin(), prefixSet.end());
+              std::sort(uniqueFetched.begin(), uniqueFetched.end());
+            }
+          }
+          
+          // 用分隔符連接
+          std::string joined;
+          for (size_t i = 0; i < uniqueFetched.size(); i++) {
+            if (i > 0) joined += chopCaseSeparator;
+            joined += uniqueFetched[i];
+          }
+          choppedZhuyinCandidates.push_back(joined);
+          break;
+        }
+      }
+    }
+
+    return choppedZhuyinCandidates;
+  }
+
+ private:
+  /// 收集節點及其所有後代的詞條
+  std::vector<std::string> collectAllDescendantEntries(const TNode& node) {
+    std::vector<std::string> result = node.entries;
+    
+    // 遍歷所有子節點
+    for (const auto& pair : node.children) {
+      int childNodeID = pair.second;
+      if (nodes.count(childNodeID)) {
+        auto childEntries = collectAllDescendantEntries(nodes[childNodeID]);
+        result.insert(result.end(), childEntries.begin(), childEntries.end());
+      }
+    }
+    
+    return result;
+  }
+
+  /// 更新所有可能的讀音列表
+  void updateAllPossibleReadings() {
+    allPossibleReadings.clear();
+    
+    const std::map<std::string, std::string>* table = nullptr;
+    switch (parser) {
+      case ofHanyuPinyin:
+        table = &mapHanyuPinyin;
+        break;
+      case ofSecondaryPinyin:
+        table = &mapSecondaryPinyin;
+        break;
+      case ofYalePinyin:
+        table = &mapYalePinyin;
+        break;
+      case ofHualuoPinyin:
+        table = &mapHualuoPinyin;
+        break;
+      case ofUniversalPinyin:
+        table = &mapUniversalPinyin;
+        break;
+      case ofWadeGilesPinyin:
+        table = &mapWadeGilesPinyin;
+        break;
+      default:
+        // For non-pinyin parsers, use Hanyu Pinyin values as base
+        table = &mapHanyuPinyin;
+        break;
+    }
+
+    if (table) {
+      for (const auto& pair : *table) {
+        allPossibleReadings.push_back(pair.first);
+      }
+    }
+
+    // Sort by length (descending) then alphabetically
+    std::sort(allPossibleReadings.begin(), allPossibleReadings.end(),
+              [](const std::string& a, const std::string& b) {
+                if (a.length() != b.length()) {
+                  return a.length() > b.length();
+                }
+                return a > b;
+              });
   }
 };
 
