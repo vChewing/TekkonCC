@@ -97,6 +97,48 @@ using namespace Tekkon;
   XCTAssertEqual(composer.value(), "ㄐㄩㄢˋ");
 }
 
+- (void)test_Basic_SemivowelNormalizationWithEncounteredVowels {
+  // 測試「ㄩ」遇到特定韻母時應即時轉為「ㄨ」的邏輯。
+  Composer composer = Composer("", ofDachen, true);
+  composer.receiveKeyFromPhonabet("ㄩ");
+  composer.receiveKeyFromPhonabet("ㄛ");
+  XCTAssertEqual(composer.value(), "ㄨㄛ");
+
+  // 測試聲母存在時依然維持正確輸出。
+  composer.clear();
+  composer.receiveKeyFromPhonabet("ㄅ");
+  composer.receiveKeyFromPhonabet("ㄩ");
+  composer.receiveKeyFromPhonabet("ㄛ");
+  XCTAssertEqual(composer.getComposition(), "ㄅㄛ");
+}
+
+- (void)test_Basic_PronounceableQueryKeyGate {
+  // 測試 pronounceableOnly 旗標僅允許可唸組合的結果通過。
+  Composer composer = Composer("", ofDachen, false);
+  composer.receiveKeyFromPhonabet("ˊ");
+  XCTAssertFalse(composer.isPronounceable());
+  XCTAssertEqual(composer.phonabetKeyForQuery(true), "");
+  XCTAssertEqual(composer.phonabetKeyForQuery(false), "ˊ");
+}
+
+- (void)test_Basic_PinyinTrieBranchInsertKeepsExistingBranches {
+  // 測試 PinyinTrie 在同一節點新增多個分支時，既有讀音不會被覆蓋。
+  PinyinTrie trie = PinyinTrie(ofDachen);
+  trie.insert("li", "ㄌㄧ");
+  trie.insert("lin", "ㄌㄧㄣ");
+  trie.insert("liu", "ㄌㄧㄡ");
+
+  std::vector<std::string> fetched = trie.search("li");
+  auto contains = [&fetched](const std::string& needle) {
+    for (const std::string& target : fetched) {
+      if (target == needle) return true;
+    }
+    return false;
+  };
+  XCTAssertTrue(contains("ㄌㄧ"));
+  XCTAssertTrue(contains("ㄌㄧㄣ"));
+  XCTAssertTrue(contains("ㄌㄧㄡ"));
+}
 // =========== PHONABET TYPINNG HANDLING TESTS (BASIC) ===========
 
 - (void)test_Basic_PhonabetKeyReceivingAndCompositions {

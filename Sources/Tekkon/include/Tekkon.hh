@@ -1540,10 +1540,10 @@ inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
 
 // MARK: - Phonabet Structure
 
-/// 注音符號型別。本身與字串差不多，但卻只能被設定成一個注音符號字符。
+/// 注音符號型別。本身與字串差不多，但卻只能被設定成一個注音符號字元。
 /// 然後會根據自身的 scalarValue 的內容值自動計算自身的 PhoneType
 /// 類型（聲介韻調假）。
-/// 如果遇到被設為多個字符、或者字符不對的情況的話，scalarValue
+/// 如果遇到被設為多個字元、或者字元不對的情況的話，scalarValue
 /// 會被清空、PhoneType 會變成 null。 賦值時最好直接重新 init 且一直用 let
 /// 來初期化 Phonabet。
 struct Phonabet {
@@ -1748,7 +1748,7 @@ class Composer {
 
   /// 注拼槽內容是否為空。
   bool isEmpty() {
-    if (!isPinyinMode()) return intonation.isEmpty() && romajiBuffer.empty();
+    if (isPinyinMode()) return intonation.isEmpty() && romajiBuffer.empty();
     return consonant.isEmpty() && semivowel.isEmpty() && vowel.isEmpty() &&
            intonation.isEmpty();
   }
@@ -1766,7 +1766,7 @@ class Composer {
   /// 還可以在初期化時藉由 @arrange
   /// 參數來指定注音排列（預設為「.ofDachen」大千佈局）。
   ///
-  /// @param input 傳入的 String 內容，用以處理單個字符。
+  /// @param input 傳入的 String 內容，用以處理單個字元。
   /// @param arrange 要使用的注音排列。
   /// @param correction 是否對錯誤的注音讀音組合做出自動糾正處理。
   explicit Composer(std::string input = "", MandarinParser arrange = ofDachen,
@@ -1788,7 +1788,7 @@ class Composer {
     romajiBuffer.clear();
   }
 
-  /// 用於檢測「某個輸入字符訊號的合規性」的函式。
+  /// 用於檢測「某個輸入字元訊號的合規性」的函式。
   ///
   /// 注意：回傳結果會受到當前注音排列 parser 屬性的影響。
   ///
@@ -1798,7 +1798,7 @@ class Composer {
     return ((int)inputCharCode < 128) && inputValidityCheckStr(inputKey);
   }
 
-  /// 用於檢測「某個輸入字符訊號的合規性」的函式。
+  /// 用於檢測「某個輸入字元訊號的合規性」的函式。
   ///
   /// 注意：回傳結果會受到當前注音排列 parser 屬性的影響。
   ///
@@ -1927,6 +1927,12 @@ class Composer {
           if (semivowel.scalar() == U'ㄨ') semivowel = Phonabet(U'ㄩ');
           break;
         case U'ㄛ':
+          if (semivowel.scalar() == U'ㄩ') semivowel = Phonabet(U'ㄨ');
+          if ((consonant.scalar() == U'ㄅ' || consonant.scalar() == U'ㄆ' ||
+               consonant.scalar() == U'ㄇ' || consonant.scalar() == U'ㄈ') &&
+              semivowel.scalar() == U'ㄨ')
+            semivowel.clear();
+          break;
         case U'ㄥ':
           if ((consonant.scalar() == U'ㄅ' || consonant.scalar() == U'ㄆ' ||
                consonant.scalar() == U'ㄇ' || consonant.scalar() == U'ㄈ') &&
@@ -2011,7 +2017,7 @@ class Composer {
     // Convert first character to char32_t and call the scalar version
     auto chars = splitByCodepoint(phonabet);
     if (!chars.empty()) {
-      std::string firstChar = chars[0];
+      std::string firstChar = chars.back();
       if (firstChar.size() > 0) {
         const unsigned char* bytes =
             reinterpret_cast<const unsigned char*>(firstChar.c_str());
@@ -2686,7 +2692,7 @@ class PinyinTrie {
     std::vector<std::string> entries;
     std::string character;
     std::string readingKey;
-    std::map<std::string, int> children;  // 字符 -> 子節點ID映射
+    std::map<std::string, int> children;  // 字元 -> 子節點ID映射
 
     TNode() = default;
     TNode(int id, const std::string& character = "",
@@ -2743,30 +2749,28 @@ class PinyinTrie {
   /// 插入一個拼音到注音的映射
   void insert(const std::string& key, const std::string& entry) {
     TNode* currentNode = &nodes[0];
-    int currentNodeID = 0;
 
-    // 遍歷關鍵字的每個字符
+    // 遍歷關鍵字的每個字元
     for (char c : key) {
       std::string charStr(1, c);
 
       auto it = currentNode->children.find(charStr);
       if (it != currentNode->children.end() && nodes.count(it->second)) {
         // 有效的子節點已存在，繼續遍歷
-        currentNodeID = it->second;
-        currentNode = &nodes[currentNodeID];
-      } else {
-        // 創建新的子節點
-        int newNodeID = static_cast<int>(nodes.size());
-        TNode newNode(newNodeID, charStr);
-
-        // 更新關係
-        currentNode->children[charStr] = newNodeID;
-        nodes[newNodeID] = newNode;
-
-        // 更新當前節點
-        currentNode = &nodes[newNodeID];
-        currentNodeID = newNodeID;
+        currentNode = &nodes[it->second];
+        continue;
       }
+
+      // 創建新的子節點
+      int newNodeID = static_cast<int>(nodes.size());
+      TNode newNode(newNodeID, charStr);
+
+      // 更新關係
+      currentNode->children[charStr] = newNodeID;
+      nodes[newNodeID] = newNode;
+
+      // 更新當前節點
+      currentNode = &nodes[newNodeID];
     }
 
     // 在最終節點添加詞條
@@ -2834,7 +2838,7 @@ class PinyinTrie {
         if (foundMatch) break;
       }
 
-      // 如果沒找到相符的條目，將當前字符作為單獨的一項
+      // 如果沒找到相符的條目，將當前字元作為單獨的一項
       if (!foundMatch) {
         result.push_back(readingComplex.substr(currentPosition, 1));
         currentPosition++;
