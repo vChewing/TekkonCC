@@ -9,21 +9,19 @@
 /// 那樣放在檔案末尾，就只能放在檔案開頭了。另外，Cpp 的 select case 語句是可以
 /// 將 std::string 拿來 switch 的，但必須做雜湊化處理（hashify）使其整數化。
 ///
-/// Version 1.7.0 Changes (Ported from Swift Tekkon v1.7.0):
-/// - Core data type changed from std::string to char32_t (Unicode scalar) for
-/// phonabets
-/// - allowedConsonants, allowedSemivowels, allowedVowels, allowedIntonations
-/// now use char32_t
-/// - Phonabet struct now stores char32_t internally (scalarValue)
-/// - Added Phonabet(char32_t) constructor
-/// - Added receiveKeyFromPhonabet(char32_t) method
-/// - Composer properties (consonant, semivowel, vowel, intonation) are public
-/// for read access
-///   but should only be modified through receiveKey/receiveSequence methods
+/// 版本 1.7.0 變更（從 Swift Tekkon v1.7.0 移植）：
+/// - 注音符元的核心資料型別從 std::string 變更為 char32_t（Unicode 純量）
+/// - allowedConsonants、allowedSemivowels、allowedVowels、allowedIntonations
+///   現在使用 char32_t
+/// - Phonabet 結構現在以 char32_t 儲存於內部（scalarValue）
+/// - 新增 Phonabet(char32_t) 建構子
+/// - 新增 receiveKeyFromPhonabet(char32_t) 方法
+/// - Composer 屬性（consonant、semivowel、vowel、intonation）為公開唯讀
+///   但只應透過 receiveKey/receiveSequence 方法修改
 
-// This module conforms to Cpp17 standard.
-// Clang-14 or higher is recommended for compilation.
-// If using Swift Package Manager to compile, use Swift 5.9 or newer.
+// 本模組符合 Cpp17 標準。
+// 建議使用 Clang-14 或更高版本進行編譯。
+// 若使用 Swift Package Manager 編譯，請使用 Swift 5.9 或更新版本。
 
 #ifndef TEKKON_HH_
 #define TEKKON_HH_
@@ -36,7 +34,7 @@
 #include <utility>
 #include <vector>
 
-// The namespace for this package.
+// 此套件的名稱空間。
 namespace Tekkon {
 
 // MARK: - 幾個工具函式（語法糖），讓 Cpp 更好用。
@@ -46,7 +44,7 @@ inline static std::string charToString(char theChar) {
   return result;
 }
 
-// Convert char32_t (Unicode scalar) to UTF-8 std::string
+// 將 char32_t（Unicode 純量）轉換為 UTF-8 std::string
 inline static std::string char32ToString(char32_t scalar) {
   if (scalar == 0) return "";
   std::string result;
@@ -105,11 +103,10 @@ std::vector<T>& operator+=(std::vector<T>& x, std::vector<T>& y) {
   return x;
 }
 
-// The following function is taken from boost internals.
-// License: https://www.boost.org/users/license.html
+// 以下函式取自 boost 內部實作。
+// 授權條款：https://www.boost.org/users/license.html
 inline static unsigned utf8ByteCount(unsigned theChar) {
-  // if the most significant bit with a zero in it is in position
-  // 8-N then there are N bytes in this UTF-8 sequence:
+  // 若最高有效位元為零的位置在第 8-N 位，則此 UTF-8 序列有 N 個位元組：
   unsigned mask = 0x80u;
   unsigned result = 0;
   while (theChar & mask) {
@@ -119,8 +116,8 @@ inline static unsigned utf8ByteCount(unsigned theChar) {
   return (result == 0) ? 1 : ((result > 4) ? 4 : result);
 }
 
-// The following function is taken from boost internals.
-// License: https://www.boost.org/users/license.html
+// 以下函式取自 boost 內部實作。
+// 授權條款：https://www.boost.org/users/license.html
 inline static std::vector<std::string> splitByCodepoint(std::string input) {
   std::vector<std::string> arrReturned;
   auto netaIterated = input.cbegin();
@@ -1650,19 +1647,17 @@ struct Phonabet {
 class Composer {
  public:
   // 聲介韻調。寫這樣囉唆是為了直接在這裡初期化。
-  // Note: These are public for read access, but should not be modified
-  // directly. Use receiveKey(), receiveSequence(), or clear() to modify the
-  // composer state.
+  // 注意：這些為公開唯讀，不應直接修改。
+  // 使用 receiveKey()、receiveSequence() 或 clear() 來修改組字器狀態。
   Phonabet consonant = Phonabet(), semivowel = Phonabet(), vowel = Phonabet(),
            intonation = Phonabet();
 
   /// 為拉丁字母專用的組音區。
-  /// Note: This is public for read access, but should not be modified directly.
+  /// 注意：此為公開唯讀，不應直接修改。
   std::string romajiBuffer;
 
   /// 注音排列種類。預設情況下是大千排列（Windows / macOS 預設注音排列）。
-  /// Note: This is public for read access. Use ensureParser() to change the
-  /// parser.
+  /// 注意：此為公開唯讀。使用 ensureParser() 來變更解析器。
   MandarinParser parser = ofDachen;
 
   /// 是否對錯誤的注音讀音組合做出自動糾正處理。
