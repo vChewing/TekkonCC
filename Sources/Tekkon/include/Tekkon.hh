@@ -1500,10 +1500,12 @@ inline static std::string restoreToneOneInPhona(std::string target) {
 /// @returns 轉換結果。
 inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
                                                 std::string newToneOne = "") {
-  std::regex str_reg(".*[^A-Za-z0-9].*");
+  // 允許的字元：英數 (A-Za-z0-9)、空白、Tab、連字號(-)。
+  std::regex str_reg(".*[^A-Za-z0-9 \\t-].*");
   std::smatch matchResult;
+  // 如果含底線或包含任何不在允許列表中的字元，則放棄轉換。
   if (stringInclusion(targetJoined, "_") ||
-      !std::regex_match(targetJoined, matchResult, str_reg))
+      std::regex_match(targetJoined, matchResult, str_reg))
     return targetJoined;
   std::string strResult = std::move(targetJoined);
   std::vector<std::string> keyListHYPY;
