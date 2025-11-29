@@ -1293,7 +1293,7 @@ inline static std::map<std::string, std::string> mapWadeGilesPinyin = {
 
 /// 標準大千排列專用處理陣列。
 ///
-/// 威注音輸入法 macOS 版使用了 Ukelele 佈局來完成對
+/// 唯音輸入法 macOS 版使用了 Ukelele 佈局來完成對
 /// 諸如倚天傳統等其它注音鍵盤排列的支援。如果要將鐵
 /// 恨模組拿給別的平台的輸入法使用的話，恐怕需要針對
 /// 這些注音鍵盤排列各自新增專用陣列才可以。
