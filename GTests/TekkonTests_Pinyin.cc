@@ -104,4 +104,22 @@ TEST(TekkonTests_Pinyin, IntegratedChopAndDeduct) {
   ASSERT_TRUE(hasZhuyin);
 }
 
+// Test PinyinAutoChopResult functionality
+TEST(TekkonTests_Pinyin, PinyinAutoChopResult) {
+  Composer composer("", ofHanyuPinyin);
+  composer.receiveKey("s");
+  composer.receiveKey("h");
+  composer.receiveKey("i");
+
+  auto autoChop = composer.pinyinAutoChopResult("j");
+  ASSERT_TRUE(autoChop.has_value());
+  ASSERT_EQ(autoChop.value().committedReadings.size(), 1);
+  ASSERT_EQ(autoChop.value().committedReadings[0], "ㄕ");
+  ASSERT_EQ(autoChop.value().remainingRomaji, "j");
+
+  composer.replacePinyinBuffer(autoChop.value().remainingRomaji);
+  ASSERT_EQ(composer.getInlineCompositionForDisplay(true), "j");
+  ASSERT_FALSE(composer.isPronounceable());
+}
+
 }  // namespace Tekkon

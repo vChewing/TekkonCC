@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <regex>
 #include <set>
 #include <string>
@@ -1755,6 +1756,15 @@ class Composer {
     return !vowel.isEmpty() || !semivowel.isEmpty() || !consonant.isEmpty();
   }
 
+  /// 描述連續拼音輸入在當前拍次應如何自動 chop 的結果。
+  struct PinyinAutoChopResult {
+    /// 已確認可先行送交組字器的前段注音讀音鍵。
+    std::vector<std::string> committedReadings;
+
+    /// 保留在拼音組音區內、等待後續輸入的尾段羅馬字串。
+    std::string remainingRomaji;
+  };
+
   // MARK: 注拼槽對外處理函式.
 
   ~Composer() { clear(); }
@@ -2103,6 +2113,125 @@ class Composer {
     } else if (!consonant.isEmpty()) {
       consonant.clear();
     }
+  }
+
+  /// 在拼音模式下試算「當前 buffer 加上新字元」是否應自動 chop 前段有效讀音。
+  ///
+  /// 僅當整體延伸後已不再是單一可唸讀音、但 chop
+  /// 後除最後一段以外都能對應成完整拼音時，
+  /// 才會回傳可提交的前段注音讀音與應保留的尾段拼音 buffer。
+  /// @param input 本拍欲追加的單一拼音字元。
+  /// @return 自動 chop 的結果；若本拍不應觸發自動 chop 則回傳空指標。
+  std::optional<PinyinAutoChopResult> pinyinAutoChopResult(std::string input) {
+    if (!isPinyinMode() || !intonation.isEmpty()) return std::nullopt;
+    if (input.empty()) return std::nullopt;
+    if (!inputValidityCheckStr(input)) return std::nullopt;
+    if (mapArayuruPinyinIntonation.count(input)) return std::nullopt;
+
+    const std::map<std::string, std::string>* readingMap = nullptr;
+    switch (parser) {
+      case ofHanyuPinyin:
+        readingMap = &mapHanyuPinyin;
+        break;
+      case ofSecondaryPinyin:
+        readingMap = &mapSecondaryPinyin;
+        break;
+      case ofYalePinyin:
+        readingMap = &mapYalePinyin;
+        break;
+      case ofHualuoPinyin:
+        readingMap = &mapHualuoPinyin;
+        break;
+      case ofUniversalPinyin:
+        readingMap = &mapUniversalPinyin;
+        break;
+      case ofWadeGilesPinyin:
+        readingMap = &mapWadeGilesPinyin;
+        break;
+      default:
+        return std::nullopt;
+    }
+
+    std::string appended = romajiBuffer + input;
+    Composer validationComposer = *this;
+    validationComposer.clear();
+    validationComposer.receiveSequence(appended, true);
+    if (validationComposer.isPronounceable()) return std::nullopt;
+
+    // Build allPossibleReadings inline (sorted by length descending)
+    std::vector<std::string> allPossibleReadings;
+    for (const auto& pair : *readingMap) {
+      allPossibleReadings.push_back(pair.first);
+    }
+    std::sort(allPossibleReadings.begin(), allPossibleReadings.end(),
+              [](const std::string& a, const std::string& b) {
+                if (a.length() != b.length()) {
+                  return a.length() > b.length();
+                }
+                return a > b;
+              });
+
+    // Chop algorithm inline
+    std::vector<std::string> chopped;
+    int complexLength = static_cast<int>(appended.length());
+    int longestReadingLength =
+        allPossibleReadings.empty()
+            ? 1
+            : static_cast<int>(allPossibleReadings[0].length());
+    int maxScopeSize = std::min(complexLength, longestReadingLength);
+    int currentPosition = 0;
+
+    while (currentPosition < complexLength) {
+      bool foundMatch = false;
+      int longPossibleScopeSize =
+          std::min(maxScopeSize, complexLength - currentPosition);
+
+      for (int scopeSize = longPossibleScopeSize; scopeSize >= 1; scopeSize--) {
+        std::string currentBlob = appended.substr(currentPosition, scopeSize);
+        for (const auto& currentReading : allPossibleReadings) {
+          if (currentReading.find(currentBlob) == 0) {
+            chopped.push_back(currentBlob);
+            currentPosition += scopeSize;
+            foundMatch = true;
+            break;
+          }
+        }
+        if (foundMatch) break;
+      }
+
+      if (!foundMatch) {
+        chopped.push_back(appended.substr(currentPosition, 1));
+        currentPosition++;
+      }
+    }
+
+    if (chopped.size() < 2) return std::nullopt;
+
+    std::string remainingRomaji = chopped.back();
+    std::vector<std::string> leadingSlices(chopped.begin(), chopped.end() - 1);
+    if (leadingSlices.empty()) return std::nullopt;
+
+    std::vector<std::string> committedReadings;
+    for (const std::string& slice : leadingSlices) {
+      auto it = readingMap->find(slice);
+      if (it == readingMap->end()) return std::nullopt;
+      committedReadings.push_back(it->second);
+    }
+
+    PinyinAutoChopResult result;
+    result.committedReadings = committedReadings;
+    result.remainingRomaji = remainingRomaji;
+    return result;
+  }
+
+  /// 以指定的拼音字串重建拼音組音區內容。
+  /// @param romaji 欲保留在拼音組音區內的羅馬字串。
+  void replacePinyinBuffer(std::string romaji) {
+    if (!isPinyinMode()) return;
+    clear();
+    if (romaji.empty()) return;
+    receiveSequence(romaji, true);
+    romajiBuffer = romaji;
   }
 
   /// 用來檢測是否有調號的函式，預設情況下不判定聲調以外的內容的存無。

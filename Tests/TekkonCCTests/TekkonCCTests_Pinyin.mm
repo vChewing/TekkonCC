@@ -425,4 +425,21 @@ using namespace Tekkon;
   XCTAssertTrue(hasZhuyin);
 }
 
+- (void)test_Pinyin_PinyinAutoChopResult {
+  Composer composer("", ofHanyuPinyin);
+  composer.receiveKey("s");
+  composer.receiveKey("h");
+  composer.receiveKey("i");
+
+  auto autoChop = composer.pinyinAutoChopResult("j");
+  XCTAssertTrue(autoChop.has_value());
+  XCTAssertEqual(autoChop.value().committedReadings.size(), 1);
+  XCTAssertEqual(autoChop.value().committedReadings[0], "ㄕ");
+  XCTAssertEqual(autoChop.value().remainingRomaji, "j");
+
+  composer.replacePinyinBuffer(autoChop.value().remainingRomaji);
+  XCTAssertEqual(composer.getInlineCompositionForDisplay(true), "j");
+  XCTAssertFalse(composer.isPronounceable());
+}
+
 @end
