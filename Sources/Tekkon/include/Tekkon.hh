@@ -1445,15 +1445,66 @@ inline static std::vector<MandarinParser> arrPinyinParsers = {
 
 // MARK: - Phonabet to Hanyu-Pinyin Conversion Processing
 
+// MARK: - Pre-built lookup for O(N) single-pass conversion.
+
+/// 從 arrPhonaToHanyuPinyin 預建的字串→拼音對照表。
+/// 因為原陣列已按長度降冪排列（多字元在前），建表後 longest-match-first
+/// 的語意由查表順序保證。
+inline static const std::map<std::string, std::string> _phonaToPinyinLUT = [] {
+  std::map<std::string, std::string> lut;
+  for (const auto& pair : arrPhonaToHanyuPinyin) {
+    if (pair.size() >= 2) {
+      lut[pair[0]] = pair[1];
+    }
+  }
+  return lut;
+}();
+
+/// 已知最長的注音符號組合的字元長度（以 Unicode code point 計）。
+inline static const size_t _maxPhonaPatternLength = [] {
+  size_t maxVal = 3;
+  for (const auto& pair : arrPhonaToHanyuPinyin) {
+    if (pair.size() >= 1) {
+      size_t count = splitByCodepoint(pair[0]).size();
+      if (count > maxVal) maxVal = count;
+    }
+  }
+  return maxVal;
+}();
+
 /// 注音轉拼音，要求陰平必須是空格。
 ///
 /// @param targetJoined 傳入的 String 對象物件。
 inline static std::string cnvPhonaToHanyuPinyin(std::string targetJoined = "") {
-  std::string strResult = std::move(targetJoined);
-  for (std::vector<std::string> i : arrPhonaToHanyuPinyin) {
-    replaceOccurrences(strResult, i[0], i[1]);
+  if (targetJoined.empty()) return targetJoined;
+  auto codepoints = splitByCodepoint(targetJoined);
+  std::string result;
+  // pinyin output typically longer than zhuyin
+  result.reserve(targetJoined.size() * 2);
+  size_t i = 0;
+  size_t n = codepoints.size();
+  while (i < n) {
+    bool matched = false;
+    size_t remaining = n - i;
+    // Greedy longest-match first: try from max possible length down to 1.
+    size_t maxLen = std::min(_maxPhonaPatternLength, remaining);
+    for (size_t len = maxLen; len >= 1; len--) {
+      std::string key;
+      for (size_t k = i; k < i + len; k++) key += codepoints[k];
+      auto it = _phonaToPinyinLUT.find(key);
+      if (it != _phonaToPinyinLUT.end()) {
+        result += it->second;
+        i += len;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      result += codepoints[i];
+      i++;
+    }
   }
-  return strResult;
+  return result;
 }
 
 /// 漢語拼音數字標調式轉漢語拼音教科書格式，要求陰平必須是數字 1。
@@ -1667,6 +1718,12 @@ class Composer {
   /// 是否對錯誤的注音讀音組合做出自動糾正處理。
   bool phonabetCombinationCorrectionEnabled;
 
+  // MARK: Private
+
+  /// 追蹤 romajiBuffer 是否需要從聲介韻重建。
+  /// 當 phonabet 槽位變更時設為 true，讀取 romajiBuffer 前若為 true 則先重建。
+  bool _needsRomajiUpdate = true;
+
   /// 內容值，會直接按照正確的順序拼裝自己的聲介韻調內容、再回傳。
   /// 注意：直接取這個參數的內容的話，陰平聲調會成為一個空格。
   /// 如果是要取不帶空格的注音的話，請使用「.getComposition()」而非「.Value」。
@@ -1720,6 +1777,7 @@ class Composer {
   ///
   /// @param isHanyuPinyin 是否將輸出結果轉成漢語拼音。
   std::string getInlineCompositionForDisplay(bool isHanyuPinyin = false) {
+    _refreshRomajiBufferIfNeeded();
     if (!isPinyinMode()) return getComposition(isHanyuPinyin);
     std::string result;
     std::string toneReturned;
@@ -1794,6 +1852,7 @@ class Composer {
     vowel.clear();
     intonation.clear();
     romajiBuffer.clear();
+    _needsRomajiUpdate = false;
   }
 
   /// 用於檢測「某個輸入字元訊號的合規性」的函式。
@@ -1869,10 +1928,8 @@ class Composer {
     receiveKeyFromPhonabet(strWith);
   }
 
-  void updateRomajiBuffer() {
-    romajiBuffer = Tekkon::cnvPhonaToHanyuPinyin(
-        consonant.value() + semivowel.value() + vowel.value());
-  }
+  /// 按需更新拼音組音區的內容顯示（延遲計算）。
+  void updateRomajiBuffer() { _needsRomajiUpdate = true; }
 
   /// 接受傳入的按鍵訊號時的處理，處理對象為 String。
   /// 另有同名函式可處理 UniChar 訊號。
@@ -1892,6 +1949,7 @@ class Composer {
     } else {
       // 為了防止 RomajiBuffer 越敲越長帶來算力負擔，
       // 這裡讓它在要溢出時自動丟掉最早輸入的音頭。
+      _refreshRomajiBufferIfNeeded();
       maxCount = (parser == ofWadeGilesPinyin) ? 7 : 6;
       if (romajiBuffer.length() > maxCount - 1) {
         romajiBuffer.erase(0, 1);
@@ -1899,6 +1957,7 @@ class Composer {
       std::string romajiBufferBackup = romajiBuffer + input;
       receiveSequence(romajiBufferBackup, true);
       romajiBuffer = romajiBufferBackup;
+      _needsRomajiUpdate = false;
     }
   }
 
@@ -2099,11 +2158,13 @@ class Composer {
   ///
   /// 基本上就是按順序從游標前方開始往後刪。
   void doBackSpace() {
+    _refreshRomajiBufferIfNeeded();
     if (isPinyinMode() && !romajiBuffer.empty()) {
       if (!intonation.isEmpty()) {
         intonation.clear();
       } else {
         romajiBuffer.pop_back();
+        _needsRomajiUpdate = false;
       }
     } else if (!intonation.isEmpty()) {
       intonation.clear();
@@ -2233,6 +2294,7 @@ class Composer {
     if (romaji.empty()) return;
     receiveSequence(romaji, true);
     romajiBuffer = romaji;
+    _needsRomajiUpdate = false;
   }
 
   /// 用來檢測是否有調號的函式，預設情況下不判定聲調以外的內容的存無。
@@ -2248,6 +2310,17 @@ class Composer {
   ///
   /// @param arrange 給該注拼槽指定注音排列。
   void ensureParser(MandarinParser arrange) { parser = arrange; };
+
+  // MARK: Private
+
+  /// 若 romajiBuffer 需要重建（phonabet 槽位已變更但尚未反映到 romajiBuffer），
+  /// 則從當前的聲介韻重新計算並寫入 romajiBuffer。
+  void _refreshRomajiBufferIfNeeded() {
+    if (!_needsRomajiUpdate) return;
+    romajiBuffer = Tekkon::cnvPhonaToHanyuPinyin(
+        consonant.value() + semivowel.value() + vowel.value());
+    _needsRomajiUpdate = false;
+  }
 
   /// 拿取用來進行索引檢索用的注音字串。
   ///
