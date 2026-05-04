@@ -1718,6 +1718,13 @@ class Composer {
   /// 是否對錯誤的注音讀音組合做出自動糾正處理。
   bool phonabetCombinationCorrectionEnabled;
 
+  /// 是否嚴格要求按照聲介韻調（consonant→semivowel→vowel→intonation）順序輸入。
+  /// 啟用後，若 phonabet 要填入的 slot 比目前已填的最大 slot 更早（例如 vowel
+  /// 已填而 semivowel 後到）， 則該 phonabet
+  /// 會被拒絕。聲調（intonation）永遠允許。
+  /// 此特性僅供部分特殊場合使用，等同於停用並擊特性。
+  bool enforceCSVTOrdering = false;
+
   // MARK: Private
 
   /// 追蹤 romajiBuffer 是否需要從聲介韻重建。
@@ -1937,10 +1944,10 @@ class Composer {
   /// 如果是諸如複合型注音排列的話，翻譯結果有可能為空，但翻譯過程已經處理好聲介韻調分配了。
   ///
   /// @param input 傳入的 String 內容。
-  void receiveKey(std::string input) {
+  /// @return 若按鍵被接受則為 true，被拒絕則為 false。
+  bool receiveKey(std::string input) {
     if (!isPinyinMode()) {
-      receiveKeyFromPhonabet(translate(input));
-      return;
+      return receiveKeyFromPhonabet(translate(input));
     }
     int maxCount;
     if (mapArayuruPinyinIntonation.count(input)) {
@@ -1959,6 +1966,7 @@ class Composer {
       romajiBuffer = romajiBufferBackup;
       _needsRomajiUpdate = false;
     }
+    return true;
   }
 
   /// 接受傳入的按鍵訊號時的處理，處理對象為 UniChar。
@@ -1967,7 +1975,8 @@ class Composer {
   /// 如果是諸如複合型注音排列的話，翻譯結果有可能為空，但翻譯過程已經處理好聲介韻調分配了。
   ///
   /// @param input 傳入的 UniChar 內容。
-  void receiveKey(char input) { receiveKey((charToString(input))); };
+  /// @return 若按鍵被接受則為 true，被拒絕則為 false。
+  bool receiveKey(char input) { return receiveKey((charToString(input))); };
 
   /// 接受傳入的按鍵訊號時的處理，處理對象為單個注音符號。
   /// 主要就是將注音符號拆分辨識且分配到正確的貯存位置而已。
@@ -1977,7 +1986,8 @@ class Composer {
   /// 主要就是將注音符號拆分辨識且分配到正確的貯存位置而已。
   ///
   /// @param phonabet 傳入的單個注音符號 Unicode scalar。
-  void receiveKeyFromPhonabet(char32_t phonabet) {
+  /// @return 若按鍵被接受則為 true，被拒絕則為 false。
+  bool receiveKeyFromPhonabet(char32_t phonabet) {
     Phonabet thePhone = Phonabet(phonabet);
     if (phonabetCombinationCorrectionEnabled) {
       switch (phonabet) {
@@ -2056,6 +2066,21 @@ class Composer {
       }
     }
 
+    // 個別情形需強制聲介韻調的輸入順序。
+    if (enforceCSVTOrdering) {
+      int newSlot = static_cast<int>(
+          thePhone.type);  // 1=consonant, 2=semivowel, 3=vowel, 4=intonation
+      int maxFilledSlot = std::max({
+          intonation.isEmpty() ? 0 : static_cast<int>(PhoneType::intonation),
+          vowel.isEmpty() ? 0 : static_cast<int>(PhoneType::vowel),
+          semivowel.isEmpty() ? 0 : static_cast<int>(PhoneType::semivowel),
+          consonant.isEmpty() ? 0 : static_cast<int>(PhoneType::consonant),
+      });
+      if (newSlot != static_cast<int>(PhoneType::intonation) &&
+          newSlot < maxFilledSlot)
+        return false;
+    }
+
     switch (thePhone.type) {
       case PhoneType::consonant:
         consonant = thePhone;
@@ -2073,14 +2098,16 @@ class Composer {
         break;
     }
     updateRomajiBuffer();
+    return true;
   }
 
   /// 接受傳入的按鍵訊號時的處理，處理對象為單個注音符號（字串版本，為了向後兼容）。
   /// 主要就是將注音符號拆分辨識且分配到正確的貯存位置而已。
   ///
   /// @param phonabet 傳入的單個注音符號字串。
-  void receiveKeyFromPhonabet(std::string phonabet = "") {
-    if (phonabet.empty()) return;
+  /// @return 若按鍵被接受則為 true，被拒絕則為 false。
+  bool receiveKeyFromPhonabet(std::string phonabet = "") {
+    if (phonabet.empty()) return true;
     // Convert first character to char32_t and call the scalar version
     auto chars = splitByCodepoint(phonabet);
     if (!chars.empty()) {
@@ -2101,10 +2128,11 @@ class Composer {
                    ((bytes[2] & 0x3F) << 6) | (bytes[3] & 0x3F);
         }
         if (scalar != 0) {
-          receiveKeyFromPhonabet(scalar);
+          return receiveKeyFromPhonabet(scalar);
         }
       }
     }
+    return false;
   }
 
   /// 處理一連串的按鍵輸入、且返回被處理之後的注音（陰平為空格）。
@@ -2115,8 +2143,9 @@ class Composer {
                               bool isRomaji = false) {
     clear();
     if (!isRomaji) {
+      // 使用 for 迴圈，以利 enforceCSVTOrdering 拒絕時提前終止。
       for (char key : givenSequence) {
-        receiveKey(key);
+        if (!receiveKey(key)) break;
       }
       return value();
     }

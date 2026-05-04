@@ -160,13 +160,13 @@ size_t GetThreadCount() {
 // we cannot detect it.
 size_t GetThreadCount() {
   int mib[] = {
-      CTL_KERN,
-      KERN_PROC,
-      KERN_PROC_PID,
-      getpid(),
+    CTL_KERN,
+    KERN_PROC,
+    KERN_PROC_PID,
+    getpid(),
 #if GTEST_OS_NETBSD
-      sizeof(struct kinfo_proc),
-      1,
+    sizeof(struct kinfo_proc),
+    1,
 #endif
   };
   u_int miblen = sizeof(mib) / sizeof(mib[0]);
