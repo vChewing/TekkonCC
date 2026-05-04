@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <regex>
 #include <set>
@@ -2872,6 +2873,27 @@ class PinyinTrie {
     }
   }
 
+  // MARK: Shared Cache
+
+  /// 取得指定 parser 對應的快取 PinyinTrie 實例。
+  /// 若尚未存在則新建並快取。
+  static PinyinTrie& shared(MandarinParser parser) {
+    int cacheKey = static_cast<int>(parser);
+    std::lock_guard<std::mutex> lock(sharedCacheMutex);
+    auto it = sharedCache.find(cacheKey);
+    if (it != sharedCache.end()) return *it->second;
+    auto* created = new PinyinTrie(parser);
+    sharedCache[cacheKey] = created;
+    return *created;
+  }
+
+  /// 清除所有已快取的 PinyinTrie 實例。
+  static void clearSharedCache() {
+    std::lock_guard<std::mutex> lock(sharedCacheMutex);
+    for (auto& pair : sharedCache) delete pair.second;
+    sharedCache.clear();
+  }
+
   /// 插入一個拼音到注音的映射
   void insert(const std::string& key, const std::string& entry) {
     TNode* currentNode = &nodes[0];
@@ -3109,6 +3131,11 @@ class PinyinTrie {
                 return a > b;
               });
   }
+
+  // MARK: Shared Cache (private static)
+
+  static inline std::mutex sharedCacheMutex;
+  static inline std::map<int, PinyinTrie*> sharedCache;
 };
 
 }  // namespace Tekkon
