@@ -8041,4 +8041,36 @@ TEST(TekkonTests_Advanced, AlvinLiuKeys) {
   ASSERT_TRUE(container.empty());
 }
 
+TEST(TekkonTests_Utilities, RestoreToneOneEdgeCases) {
+  // 空字串防呆（對齊 Swift / C# 版行為）。
+  ASSERT_EQ(restoreToneOneInPhona(""), "");
+  ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");
+  ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠ˙"), "ㄉㄧㄠ˙");
+}
+
+TEST(TekkonTests_Utilities, PhonaToPinyinFullTableSweep) {
+  // 對照表全表掃描：bucket 化之後每筆條目仍須精確命中。
+  for (const auto& pair : arrPhonaToHanyuPinyin) {
+    if (pair.size() < 2) continue;
+    ASSERT_EQ(cnvPhonaToHanyuPinyin(pair[0]), pair[1]);
+  }
+}
+
+TEST(TekkonTests_Utilities, PhonaToPinyinLongestMatch) {
+  // 最長比對優先：三字組合不得被拆成「聲母＋韻母」。
+  ASSERT_EQ(cnvPhonaToHanyuPinyin("ㄅㄧㄥ"), "bing");
+  ASSERT_EQ(cnvPhonaToHanyuPinyin("ㄅㄧㄥˋ"), "bing4");
+  // 未命中條目的字元原樣保留。
+  ASSERT_EQ(cnvPhonaToHanyuPinyin("幹"), "幹");
+}
+
+TEST(TekkonTests_Utilities, PinyinToPhonaCompound) {
+  ASSERT_EQ(cnvHanyuPinyinToPhona("shang4"), "ㄕㄤˋ");
+  ASSERT_EQ(cnvHanyuPinyinToPhona("zhang1"), "ㄓㄤ");
+  ASSERT_EQ(cnvHanyuPinyinToPhona("zhang1", " "), "ㄓㄤ ");
+  // 含不允許字元（非半形英數）時放棄轉換、原樣回傳。
+  ASSERT_EQ(cnvHanyuPinyinToPhona("nǐ"), "nǐ");
+}
+
 }  // namespace Tekkon

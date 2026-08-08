@@ -30,7 +30,6 @@
 #include <map>
 #include <mutex>
 #include <optional>
-#include <regex>
 #include <set>
 #include <string>
 #include <utility>
@@ -68,8 +67,9 @@ inline static std::string char32ToString(char32_t scalar) {
   return result;
 }
 
-inline static void replaceOccurrences(std::string& data, std::string toSearch,
-                                      std::string replaceStr) {
+inline static void replaceOccurrences(std::string& data,
+                                      const std::string& toSearch,
+                                      const std::string& replaceStr) {
   size_t position = data.find(toSearch);
   while (position != std::string::npos) {
     data.replace(position, toSearch.size(), replaceStr);
@@ -78,7 +78,8 @@ inline static void replaceOccurrences(std::string& data, std::string toSearch,
 }
 
 template <typename Type>
-static bool contains(std::vector<Type> theVector, const Type& theElement) {
+static bool contains(const std::vector<Type>& theVector,
+                     const Type& theElement) {
   if (std::find(theVector.begin(), theVector.end(), theElement) !=
       theVector.end())
     return true;
@@ -134,7 +135,8 @@ inline static std::vector<std::string> splitByCodepoint(std::string input) {
 /// 檢查第二個字串參數是否被第一個字串參數所包含。
 /// @param able 第一個字串參數。
 /// @param baker 第二個字串參數。
-inline static bool stringInclusion(std::string able, std::string baker) {
+inline static bool stringInclusion(const std::string& able,
+                                   const std::string& baker) {
   return (baker.empty()) ? able.empty()
                          : (able.find(baker, 0) != std::string::npos);
 }
@@ -1447,30 +1449,30 @@ inline static std::vector<MandarinParser> arrPinyinParsers = {
 
 // MARK: - Pre-built lookup for O(N) single-pass conversion.
 
-/// 從 arrPhonaToHanyuPinyin 預建的字串→拼音對照表。
-/// 因為原陣列已按長度降冪排列（多字元在前），建表後 longest-match-first
-/// 的語意由查表順序保證。
-inline static const std::map<std::string, std::string> _phonaToPinyinLUT = [] {
-  std::map<std::string, std::string> lut;
-  for (const auto& pair : arrPhonaToHanyuPinyin) {
-    if (pair.size() >= 2) {
-      lut[pair[0]] = pair[1];
-    }
-  }
-  return lut;
-}();
-
-/// 已知最長的注音符號組合的字元長度（以 Unicode code point 計）。
-inline static const size_t _maxPhonaPatternLength = [] {
-  size_t maxVal = 3;
-  for (const auto& pair : arrPhonaToHanyuPinyin) {
-    if (pair.size() >= 1) {
-      size_t count = splitByCodepoint(pair[0]).size();
-      if (count > maxVal) maxVal = count;
-    }
-  }
-  return maxVal;
-}();
+/// 從 arrPhonaToHanyuPinyin 預建的對照桶：以注音組合的首個 code point 為鍵，
+/// 值為該首碼下的所有對照條目（pattern 以 code point
+/// 陣列存放、按長度降冪排列）。
+/// 供零配置滑窗比對，免去逐長度具體化一次性字串查表鍵。
+/// 最長比對優先的語意由桶內長度降冪排序保證（同長度條目內容唯一，順序無影響）。
+inline static const std::map<
+    std::string, std::vector<std::pair<std::vector<std::string>, std::string>>>
+    _phonaToPinyinBuckets = [] {
+      std::map<std::string,
+               std::vector<std::pair<std::vector<std::string>, std::string>>>
+          buckets;
+      for (const auto& pair : arrPhonaToHanyuPinyin) {
+        if (pair.size() < 2 || pair[0].empty()) continue;
+        auto pattern = splitByCodepoint(pair[0]);
+        buckets[pattern.front()].emplace_back(std::move(pattern), pair[1]);
+      }
+      for (auto& entry : buckets) {
+        std::sort(entry.second.begin(), entry.second.end(),
+                  [](const auto& first, const auto& second) {
+                    return first.first.size() > second.first.size();
+                  });
+      }
+      return buckets;
+    }();
 
 /// 注音轉拼音，要求陰平必須是空格。
 ///
@@ -1485,16 +1487,23 @@ inline static std::string cnvPhonaToHanyuPinyin(std::string targetJoined = "") {
   size_t n = codepoints.size();
   while (i < n) {
     bool matched = false;
-    size_t remaining = n - i;
-    // Greedy longest-match first: try from max possible length down to 1.
-    size_t maxLen = std::min(_maxPhonaPatternLength, remaining);
-    for (size_t len = maxLen; len >= 1; len--) {
-      std::string key;
-      for (size_t k = i; k < i + len; k++) key += codepoints[k];
-      auto it = _phonaToPinyinLUT.find(key);
-      if (it != _phonaToPinyinLUT.end()) {
-        result += it->second;
-        i += len;
+    // Greedy longest-match first: 桶內條目已按長度降冪排列，
+    // 滑窗比對全程逐 code point、不具體化任何一次性查表鍵。
+    auto bucketIt = _phonaToPinyinBuckets.find(codepoints[i]);
+    if (bucketIt != _phonaToPinyinBuckets.end()) {
+      for (const auto& candidate : bucketIt->second) {
+        const auto& pattern = candidate.first;
+        size_t patternLen = pattern.size();
+        if (i + patternLen > n) continue;
+        bool equal = true;
+        for (size_t k = 0; k < patternLen; k++) {
+          if (codepoints[i + k] == pattern[k]) continue;
+          equal = false;
+          break;
+        }
+        if (!equal) continue;
+        result += candidate.second;
+        i += patternLen;
         matched = true;
         break;
       }
@@ -1513,7 +1522,7 @@ inline static std::string cnvPhonaToHanyuPinyin(std::string targetJoined = "") {
 inline static std::string cnvHanyuPinyinToTextBookStyle(
     std::string targetJoined) {
   std::string strResult = std::move(targetJoined);
-  for (std::vector<std::string> i :
+  for (const std::vector<std::string>& i :
        arrHanyuPinyinTextbookStyleConversionTable) {
     replaceOccurrences(strResult, i[0], i[1]);
   }
@@ -1538,6 +1547,8 @@ inline static std::string cnvPhonaToTextbookStyle(std::string target) {
 /// @param target 要拿來做轉換處理的讀音。
 /// @returns 經過轉換處理的讀音鏈。
 inline static std::string restoreToneOneInPhona(std::string target) {
+  // 空字串防呆（對齊 Swift / C# 版行為）。
+  if (target.empty()) return target;
   std::string result = target;
   if (result.find("ˊ") == std::string::npos &&
       result.find("ˇ") == std::string::npos &&
@@ -1547,6 +1558,42 @@ inline static std::string restoreToneOneInPhona(std::string target) {
   return result;
 }
 
+/// 是否為拼音鏈當中不允許出現的位元組（英數、空白、Tab、連字號以外者）。
+/// 拼音輸入僅涉及 ASCII，位元組級判定即可。
+inline static bool isDisallowedPinyinChainChar(char c) {
+  // allowed: 0-9, A-Z, a-z, space(32), tab(9), dash(45)
+  if (c >= '0' && c <= '9') return false;
+  if (c >= 'A' && c <= 'Z') return false;
+  if (c >= 'a' && c <= 'z') return false;
+  if (c == ' ' || c == '\t' || c == '-') return false;
+  return true;
+}
+
+/// 預先排序的漢語拼音對照鍵（長度降冪），避免每次轉換都對辭典鍵重新排序。
+/// 建構方式與先前的逐次呼叫排序完全一致（map 走訪序 + std::sort 長度降冪）。
+inline static const std::vector<std::string> _sortedHanyuPinyinKeys = [] {
+  std::vector<std::string> keys;
+  keys.reserve(mapHanyuPinyin.size());
+  for (const auto& i : mapHanyuPinyin) keys.push_back(i.first);
+  std::sort(keys.begin(), keys.end(),
+            [](const std::string& first, const std::string& second) {
+              return first.size() > second.size();
+            });
+  return keys;
+}();
+
+/// 預先排序的阿剌嚕拼音聲調對照鍵（長度降冪），避免每次轉換都重新排序。
+inline static const std::vector<std::string> _sortedArayuruIntonationKeys = [] {
+  std::vector<std::string> keys;
+  keys.reserve(mapArayuruPinyinIntonation.size());
+  for (const auto& i : mapArayuruPinyinIntonation) keys.push_back(i.first);
+  std::sort(keys.begin(), keys.end(),
+            [](const std::string& first, const std::string& second) {
+              return first.size() > second.size();
+            });
+  return keys;
+}();
+
 /// 該函式用來將漢語拼音轉為注音。
 /// @param targetJoined 要轉換的漢語拼音內容，要求必須帶有 12345 數字標調。
 /// @param newToneOne 對陰平指定新的標記。預設情況下該標記為空字串。
@@ -1554,32 +1601,21 @@ inline static std::string restoreToneOneInPhona(std::string target) {
 inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
                                                 std::string newToneOne = "") {
   // 允許的字元：英數 (A-Za-z0-9)、空白、Tab、連字號(-)。
-  std::regex str_reg(".*[^A-Za-z0-9 \\t-].*");
-  std::smatch matchResult;
   // 如果含底線或包含任何不在允許列表中的字元，則放棄轉換。
-  if (stringInclusion(targetJoined, "_") ||
-      std::regex_match(targetJoined, matchResult, str_reg))
-    return targetJoined;
+  // 單趟掃描、遇到首個不允許字元即短路，不使用 Regex。
+  bool hasDisallowed = false;
+  for (char c : targetJoined) {
+    if (!isDisallowedPinyinChainChar(c)) continue;
+    hasDisallowed = true;
+    break;
+  }
+  if (stringInclusion(targetJoined, "_") || hasDisallowed) return targetJoined;
   std::string strResult = std::move(targetJoined);
-  std::vector<std::string> keyListHYPY;
-  for (auto const& i : mapHanyuPinyin) keyListHYPY.push_back(i.first);
-  std::sort(keyListHYPY.begin(), keyListHYPY.end(),
-            [](const std::string& first, const std::string& second) {
-              return first.size() > second.size();
-            });
 
-  std::vector<std::string> keyListIntonation;
-  for (auto const& i : mapArayuruPinyinIntonation)
-    keyListIntonation.push_back(i.first);
-  std::sort(keyListIntonation.begin(), keyListIntonation.end(),
-            [](const std::string& first, const std::string& second) {
-              return first.size() > second.size();
-            });
-
-  for (auto i : keyListHYPY) {
+  for (const auto& i : _sortedHanyuPinyinKeys) {
     replaceOccurrences(strResult, i, mapHanyuPinyin[i]);
   }
-  for (auto i : keyListIntonation) {
+  for (const auto& i : _sortedArayuruIntonationKeys) {
     replaceOccurrences(strResult, i,
                        i == "1" ? newToneOne : mapArayuruPinyinIntonation[i]);
   }

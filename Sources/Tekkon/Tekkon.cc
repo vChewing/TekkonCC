@@ -5,5 +5,3 @@
 #include "./include/Tekkon.hh"
 
 namespace Tekkon {};
-
-int main(int argc, const char* argv[]) { return 0; }
