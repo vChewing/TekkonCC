@@ -49,4 +49,21 @@ using namespace Tekkon;
   XCTAssertEqual(cnvHanyuPinyinToPhona("nǐ"), "nǐ");
 }
 
+- (void)test_Utilities_MakeToneInsensitiveVariantsBasic {
+  // 無調讀音展開為同音節聲調候選桶：陰平以空字串表示，
+  // 順序依 allowedIntonations（" ", "ˊ", "ˇ", "ˋ", "˙"）。
+  std::vector<std::string> expected = {"ㄕ", "ㄕˊ", "ㄕˇ", "ㄕˋ", "ㄕ˙"};
+  auto result = makeToneInsensitiveVariants("ㄕ");
+  XCTAssertTrue(result == expected);
+  // 去重守衛：回傳內容不得重複。
+  XCTAssertEqual(result.size(), allowedIntonations.size());
+  std::set<std::string> dedup(result.begin(), result.end());
+  XCTAssertEqual(dedup.size(), result.size());
+}
+
+- (void)test_Utilities_MakeToneInsensitiveVariantsEmptyReading {
+  std::vector<std::string> expected = {"", "ˊ", "ˇ", "ˋ", "˙"};
+  XCTAssertTrue(makeToneInsensitiveVariants("") == expected);
+}
+
 @end

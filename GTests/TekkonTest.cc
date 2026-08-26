@@ -8073,4 +8073,21 @@ TEST(TekkonTests_Utilities, PinyinToPhonaCompound) {
   ASSERT_EQ(cnvHanyuPinyinToPhona("nǐ"), "nǐ");
 }
 
+TEST(TekkonTests_Utilities, MakeToneInsensitiveVariantsBasic) {
+  // 無調讀音展開為同音節聲調候選桶：陰平以空字串表示，
+  // 順序依 allowedIntonations（" ", "ˊ", "ˇ", "ˋ", "˙"）。
+  std::vector<std::string> expected = {"ㄕ", "ㄕˊ", "ㄕˇ", "ㄕˋ", "ㄕ˙"};
+  auto result = makeToneInsensitiveVariants("ㄕ");
+  ASSERT_EQ(result, expected);
+  // 去重守衛：回傳內容不得重複。
+  ASSERT_EQ(result.size(), allowedIntonations.size());
+  std::set<std::string> dedup(result.begin(), result.end());
+  ASSERT_EQ(dedup.size(), result.size());
+}
+
+TEST(TekkonTests_Utilities, MakeToneInsensitiveVariantsEmptyReading) {
+  std::vector<std::string> expected = {"", "ˊ", "ˇ", "ˋ", "˙"};
+  ASSERT_EQ(makeToneInsensitiveVariants(""), expected);
+}
+
 }  // namespace Tekkon

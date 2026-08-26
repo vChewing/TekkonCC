@@ -1474,6 +1474,26 @@ inline static const std::map<
       return buckets;
     }();
 
+/// 將無調讀音展開為同音節的聲調候選桶（含聲調變體）。
+///
+/// 陰平（無聲調）以空字串表示；依 allowedIntonations 的順序逐個附加聲調記號。
+/// 以去重守衛防禦「多個聲調記號展開出相同候選」的極端情況，確保回傳內容無重複。
+/// - Parameter reading: 不帶顯式聲調的讀音索引鍵（注音或拼音皆可）。
+/// - Returns: 該讀音的所有聲調變體陣列（含陰平原形）。
+inline static std::vector<std::string> makeToneInsensitiveVariants(
+    const std::string& reading) {
+  std::vector<std::string> variants;
+  for (char32_t tone : allowedIntonations) {
+    std::string intonationNow = (tone == U' ') ? "" : char32ToString(tone);
+    std::string candidate = reading + intonationNow;
+    if (std::find(variants.begin(), variants.end(), candidate) ==
+        variants.end()) {
+      variants.push_back(candidate);
+    }
+  }
+  return variants;
+}
+
 /// 注音轉拼音，要求陰平必須是空格。
 ///
 /// @param targetJoined 傳入的 String 對象物件。
