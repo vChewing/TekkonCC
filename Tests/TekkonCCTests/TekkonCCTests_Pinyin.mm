@@ -442,4 +442,71 @@ using namespace Tekkon;
   XCTAssertFalse(composer.isPronounceable());
 }
 
+// Test zhuyinReadings: exact complete syllable
+- (void)test_Pinyin_PinyinTrieZhuyinReadingsExactCompleteSyllable {
+  // 漢語拼音：
+  PinyinTrie trie(ofHanyuPinyin);
+  auto shi = trie.zhuyinReadings("shi");
+  XCTAssertEqual(shi.size(), 1UL);
+  XCTAssertEqual(shi[0], "ㄕ");
+
+  auto ni = trie.zhuyinReadings("ni");
+  XCTAssertEqual(ni.size(), 1UL);
+  XCTAssertEqual(ni[0], "ㄋㄧ");
+
+  // "nan" 同時是 "nang" 的字串前綴；精確匹配時不展開後者。
+  auto nan = trie.zhuyinReadings("nan");
+  XCTAssertEqual(nan.size(), 1UL);
+  XCTAssertEqual(nan[0], "ㄋㄢ");
+
+  // 國音二式：
+  PinyinTrie trieSecondary(ofSecondaryPinyin);
+  auto chiung = trieSecondary.zhuyinReadings("chiung");
+  XCTAssertEqual(chiung.size(), 1UL);
+  XCTAssertEqual(chiung[0], "ㄑㄩㄥ");
+}
+
+// Test zhuyinReadings: incomplete prefix expansion
+- (void)test_Pinyin_PinyinTrieZhuyinReadingsIncompletePrefixExpansion {
+  PinyinTrie trie(ofHanyuPinyin);
+
+  // "z" 同時是 z- 與 zh- 兩系音節的字串前綴：兩種聲母的注音都應涵蓋。
+  auto zReadings = trie.zhuyinReadings("z");
+  XCTAssertFalse(zReadings.empty());
+  auto zDedup = zReadings;
+  std::sort(zDedup.begin(), zDedup.end());
+  zDedup.erase(std::unique(zDedup.begin(), zDedup.end()), zDedup.end());
+  XCTAssertEqual(zDedup.size(), zReadings.size());  // 去重。
+  XCTAssertTrue(
+      std::is_sorted(zReadings.begin(),
+                     zReadings.end()));  // 排序穩定（Unicode 字典序）。
+  XCTAssertTrue(std::find(zReadings.begin(), zReadings.end(), "ㄗ") !=
+                zReadings.end());
+  XCTAssertTrue(std::find(zReadings.begin(), zReadings.end(), "ㄓ") !=
+                zReadings.end());
+
+  // "zh" 前綴只涵蓋 zh- 系。
+  auto zhReadings = trie.zhuyinReadings("zh");
+  XCTAssertFalse(zhReadings.empty());
+  XCTAssertTrue(std::is_sorted(zhReadings.begin(), zhReadings.end()));
+  XCTAssertTrue(std::find(zhReadings.begin(), zhReadings.end(), "ㄓ") !=
+                zhReadings.end());
+  XCTAssertTrue(std::find(zhReadings.begin(), zhReadings.end(), "ㄗ") ==
+                zhReadings.end());
+  // 確定性：重複呼叫輸出一致。
+  XCTAssertTrue(zhReadings == trie.zhuyinReadings("zh"));
+}
+
+// Test zhuyinReadings: edge cases
+- (void)test_Pinyin_PinyinTrieZhuyinReadingsEdgeCases {
+  // 空字串：回傳空陣列。
+  PinyinTrie trie(ofHanyuPinyin);
+  XCTAssertTrue(trie.zhuyinReadings("").empty());
+  // 非拼音排列（大千注音）：直接回傳空陣列。
+  PinyinTrie trieDachen(ofDachen);
+  XCTAssertTrue(trieDachen.zhuyinReadings("z").empty());
+  // 不可能的前綴：無任何音節以之開頭。
+  XCTAssertTrue(trie.zhuyinReadings("xw").empty());
+}
+
 @end

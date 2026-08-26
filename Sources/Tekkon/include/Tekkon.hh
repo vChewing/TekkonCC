@@ -3134,6 +3134,54 @@ class PinyinTrie {
     return result;
   }
 
+  /// 將（可能不完整的）拼音片段展開為對應的注音讀音清單（不含聲調）。
+  ///
+  /// 當輸入恰好是完整音節時，僅回傳該音節對應的注音；否則回傳所有以該輸入為前綴的
+  /// 音節所對應的注音（去重且排序，以保證輸出內容穩定）。
+  /// 這個函式是「狂拼模式」前方讀音預覽的基礎：讓尚未打完的拼音也能即時組句試算。
+  /// - Parameter romaji: 拼音組音區的暫存內容。
+  /// - Returns: 對應的注音讀音清單；無法解析時回傳空陣列。
+  std::vector<std::string> zhuyinReadings(const std::string& romaji) {
+    if (romaji.empty() || parser < 100) return {};
+
+    // 完整音節：僅回傳該音節對應的注音。
+    const std::map<std::string, std::string>* table = nullptr;
+    switch (parser) {
+      case ofHanyuPinyin:
+        table = &mapHanyuPinyin;
+        break;
+      case ofSecondaryPinyin:
+        table = &mapSecondaryPinyin;
+        break;
+      case ofYalePinyin:
+        table = &mapYalePinyin;
+        break;
+      case ofHualuoPinyin:
+        table = &mapHualuoPinyin;
+        break;
+      case ofUniversalPinyin:
+        table = &mapUniversalPinyin;
+        break;
+      case ofWadeGilesPinyin:
+        table = &mapWadeGilesPinyin;
+        break;
+      default:
+        break;
+    }
+    if (table) {
+      auto exact = table->find(romaji);
+      if (exact != table->end()) return {exact->second};
+    }
+
+    // 不完整前綴：回傳所有以該輸入為前綴的音節所對應的注音。
+    auto expanded = search(romaji);
+    if (expanded.empty()) return {};
+    std::sort(expanded.begin(), expanded.end());
+    expanded.erase(std::unique(expanded.begin(), expanded.end()),
+                   expanded.end());
+    return expanded;
+  }
+
   /// 拿已經 chop 段切過的拼音來算出可能的注音 chop 結果。單個拼音 chop
   /// 可能會對應多個注音。
   ///
