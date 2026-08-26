@@ -188,4 +188,29 @@ TEST(TekkonTests_Pinyin, PinyinTrieZhuyinReadingsEdgeCases) {
   ASSERT_TRUE(trie.zhuyinReadings("xw").empty());
 }
 
+// Test BackSpace resyncs phonabet slots in pinyin mode
+TEST(TekkonTests_Pinyin, BackSpaceResyncsPhonabetSlots) {
+  Composer composer("", ofHanyuPinyin);
+
+  // 輸入完整音節「ma」。
+  composer.receiveKey("m");
+  composer.receiveKey("a");
+  ASSERT_EQ(composer.romajiBuffer, "ma");
+  ASSERT_TRUE(composer.isPronounceable());
+
+  // 兩次 BackSpace 清空緩衝：聲介韻槽位須同步清空。
+  composer.doBackSpace();
+  ASSERT_EQ(composer.romajiBuffer, "m");
+  composer.doBackSpace();
+  ASSERT_TRUE(composer.romajiBuffer.empty());
+  ASSERT_TRUE(composer.isEmpty());
+  ASSERT_FALSE(composer.isPronounceable());
+
+  // 清空後收下陰平空格鍵：不應把已刪除的「ma」重新組回。
+  composer.receiveKey(" ");  // 陰平
+  ASSERT_EQ(composer.intonation.value(), " ");
+  ASSERT_EQ(composer.getComposition(), "");
+  ASSERT_FALSE(composer.isPronounceable());
+}
+
 }  // namespace Tekkon

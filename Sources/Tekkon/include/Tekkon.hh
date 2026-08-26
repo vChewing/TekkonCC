@@ -1829,7 +1829,7 @@ class Composer {
       }
       // 下面這段不能砍，因為 Cpp 在執行上述步驟時會加上「\xCB」這個北七後綴，
       // 然後單元測試就會廢掉，因為單元測試那邊的 String Literal 並非以此結尾。
-      if (valReturnZhuyin.back() == '\xCB') {
+      if (!valReturnZhuyin.empty() && valReturnZhuyin.back() == '\xCB') {
         valReturnZhuyin.pop_back();
       }
       return valReturnZhuyin;
@@ -2248,8 +2248,14 @@ class Composer {
       if (!intonation.isEmpty()) {
         intonation.clear();
       } else {
-        romajiBuffer.pop_back();
-        _needsRomajiUpdate = false;
+        // 刪除拼音字元後，必須以縮短後的緩衝重新推導聲介韻槽位；否則 phonabet
+        // 欄位殘留已刪除的讀音（isPronounceable
+        // 誤判為真），後續的聲調鍵／空格鍵
+        // 會把已刪除的讀音重新組回（receiveSequence 會清空 romajiBuffer，故
+        // 事後須復原）。
+        std::string shortened = romajiBuffer.substr(0, romajiBuffer.size() - 1);
+        receiveSequence(shortened, true);
+        romajiBuffer = shortened;
       }
     } else if (!intonation.isEmpty()) {
       intonation.clear();

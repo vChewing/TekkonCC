@@ -509,4 +509,29 @@ using namespace Tekkon;
   XCTAssertTrue(trie.zhuyinReadings("xw").empty());
 }
 
+// Test BackSpace resyncs phonabet slots in pinyin mode
+- (void)test_Pinyin_BackSpaceResyncsPhonabetSlots {
+  Composer composer("", ofHanyuPinyin);
+
+  // 輸入完整音節「ma」。
+  composer.receiveKey("m");
+  composer.receiveKey("a");
+  XCTAssertEqual(composer.romajiBuffer, "ma");
+  XCTAssertTrue(composer.isPronounceable());
+
+  // 兩次 BackSpace 清空緩衝：聲介韻槽位須同步清空。
+  composer.doBackSpace();
+  XCTAssertEqual(composer.romajiBuffer, "m");
+  composer.doBackSpace();
+  XCTAssertTrue(composer.romajiBuffer.empty());
+  XCTAssertTrue(composer.isEmpty());
+  XCTAssertFalse(composer.isPronounceable());
+
+  // 清空後收下陰平空格鍵：不應把已刪除的「ma」重新組回。
+  composer.receiveKey(" ");  // 陰平
+  XCTAssertEqual(composer.intonation.value(), " ");
+  XCTAssertEqual(composer.getComposition(), "");
+  XCTAssertFalse(composer.isPronounceable());
+}
+
 @end
