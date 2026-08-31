@@ -3114,44 +3114,57 @@ class PinyinTrie {
     std::vector<std::string> result;
     int complexLength = static_cast<int>(readingComplex.length());
 
-    int longestReadingLength =
-        allPossibleReadings.empty()
-            ? 1
-            : static_cast<int>(allPossibleReadings[0].length());
-    int maxScopeSize = std::min(complexLength, longestReadingLength);
+    // Pinyin parser 走 trie 走訪：沿輸入字元貪婪下探，最長可達路徑
+    // 即為「是某讀音前綴」的最長 blob——狂拼／auto-chop
+    // 的輸入皆為無調詞幹（聲調走 intonation），與既有
+    // allPossibleReadings（含聲調後綴）語義在實際輸入下等價； trie
+    // 由全部讀音詞幹建立，故「blob 存在於 trie」＝「blob 是某讀音前綴」。 非
+    // Pinyin parser（注音排列等）的 trie 為空（mapZhuyinPinyin
+    // nil）、既有語義以 allPossibleReadings（zhuyin 值）比對，保留原線性掃描。
     int currentPosition = 0;
 
     while (currentPosition < complexLength) {
-      bool foundMatch = false;
-
-      // 嘗試從最長的可能前綴開始比對
-      int longPossibleScopeSize =
-          std::min(maxScopeSize, complexLength - currentPosition);
-
-      for (int scopeSize = longPossibleScopeSize; scopeSize >= 1; scopeSize--) {
-        int endPosition = currentPosition + scopeSize;
-        if (endPosition > complexLength) {
-          continue;
+      int endPosition = currentPosition;
+      if (parser >= 100) {
+        // Pinyin：trie 走訪。
+        TNode* node = &nodes[0];
+        while (endPosition < complexLength) {
+          std::string charStr = readingComplex.substr(endPosition, 1);
+          auto it = node->children.find(charStr);
+          if (it == node->children.end() || !nodes.count(it->second)) break;
+          node = &nodes[it->second];
+          endPosition++;
         }
-
-        std::string currentBlob =
-            readingComplex.substr(currentPosition, scopeSize);
-
-        // 檢查是否有任何讀音以這個字串開頭
-        for (const auto& currentReading : allPossibleReadings) {
-          if (currentReading.find(currentBlob) == 0) {  // hasPrefix
-            result.push_back(currentBlob);
-            currentPosition = endPosition;
-            foundMatch = true;
-            break;
+      } else {
+        // 非 Pinyin：最長前綴線性掃描（讀音數少、非熱路徑）。
+        int longestReadingLength =
+            allPossibleReadings.empty()
+                ? 1
+                : static_cast<int>(allPossibleReadings[0].length());
+        int maxScopeSize =
+            std::min(complexLength - currentPosition, longestReadingLength);
+        for (int scopeSize = maxScopeSize; scopeSize >= 1; scopeSize--) {
+          int candidateEnd = currentPosition + scopeSize;
+          std::string currentBlob =
+              readingComplex.substr(currentPosition, scopeSize);
+          bool matched = false;
+          for (const auto& currentReading : allPossibleReadings) {
+            if (currentReading.find(currentBlob) == 0) {  // hasPrefix
+              endPosition = candidateEnd;
+              matched = true;
+              break;
+            }
           }
+          if (matched) break;
         }
-
-        if (foundMatch) break;
       }
 
-      // 如果沒找到相符的條目，將當前字元作為單獨的一項
-      if (!foundMatch) {
+      if (endPosition > currentPosition) {
+        result.push_back(readingComplex.substr(currentPosition,
+                                               endPosition - currentPosition));
+        currentPosition = endPosition;
+      } else {
+        // 如果沒找到相符的條目，將當前字元作為單獨的一項。
         result.push_back(readingComplex.substr(currentPosition, 1));
         currentPosition++;
       }
