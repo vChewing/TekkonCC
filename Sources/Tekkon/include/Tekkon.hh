@@ -1781,6 +1781,15 @@ class Composer {
   /// 此特性僅供部分特殊場合使用，等同於停用並擊特性。
   bool enforceCSVTOrdering = false;
 
+  /// 是否允許 romajiBuffer 超過單音節長度上限（狂拼等多音節簡拼字母流需要）。
+  ///
+  /// 預設 false：維持既有 FIFO 音頭丟棄防呆——正常拼音單音節最長 6 碼
+  /// （Wade-Giles 7 碼），超出時自動丟棄最早輸入的音頭、防止 buffer 無限增長。
+  /// 設為 true 時不做音頭丟棄：呼叫端（狂拼模式）負責在固化／提交／auto-chop 時
+  /// 清空或重建注拼槽，使多音節簡拼字母流（如「slliang」）完整保留、
+  /// 不會被截斷成「lliang」而丟失前導字母。
+  bool allowsExtendedRomajiBuffer = false;
+
   // MARK: Private
 
   /// 追蹤 romajiBuffer 是否需要從聲介韻重建。
@@ -2012,10 +2021,16 @@ class Composer {
     } else {
       // 為了防止 RomajiBuffer 越敲越長帶來算力負擔，
       // 這裡讓它在要溢出時自動丟掉最早輸入的音頭。
+      // 狂拼等多音節簡拼字母流可超過單音節長度上限，此時由
+      // allowsExtendedRomajiBuffer
+      // 關閉音頭丟棄、改由呼叫端負責在固化／提交時清空注拼槽——否則「slliang」類
+      // 輸入會被截斷成「lliang」、丟失前導字母。
       _refreshRomajiBufferIfNeeded();
-      maxCount = (parser == ofWadeGilesPinyin) ? 7 : 6;
-      if (romajiBuffer.length() > maxCount - 1) {
-        romajiBuffer.erase(0, 1);
+      if (!allowsExtendedRomajiBuffer) {
+        maxCount = (parser == ofWadeGilesPinyin) ? 7 : 6;
+        if (romajiBuffer.length() > maxCount - 1) {
+          romajiBuffer.erase(0, 1);
+        }
       }
       std::string romajiBufferBackup = romajiBuffer + input;
       receiveSequence(romajiBufferBackup, true);

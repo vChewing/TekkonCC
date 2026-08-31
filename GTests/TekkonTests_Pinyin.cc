@@ -213,4 +213,20 @@ TEST(TekkonTests_Pinyin, BackSpaceResyncsPhonabetSlots) {
   ASSERT_FALSE(composer.isPronounceable());
 }
 
+// Test extended romaji buffer preserves long abbreviation stream
+TEST(TekkonTests_Pinyin, ExtendedRomajiBufferPreservesLongAbbreviationStream) {
+  // 預設（false）：超過 6 碼即丟棄最早音頭——「slliang」第 7 碼「g」觸發、
+  // buffer 變「lliang」。
+  Composer capped("", ofHanyuPinyin);
+  for (char ch : std::string("slliang")) capped.receiveKey(std::string(1, ch));
+  ASSERT_EQ(capped.romajiBuffer, "lliang");
+
+  // 啟用（true）：完整保留多音節簡拼字母流。
+  Composer extended("", ofHanyuPinyin);
+  extended.allowsExtendedRomajiBuffer = true;
+  for (char ch : std::string("slliang"))
+    extended.receiveKey(std::string(1, ch));
+  ASSERT_EQ(extended.romajiBuffer, "slliang");
+}
+
 }  // namespace Tekkon
