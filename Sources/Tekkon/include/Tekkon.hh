@@ -2428,6 +2428,96 @@ class Composer {
     _needsRomajiUpdate = false;
   }
 
+  /// 檢證：傳入的按鍵序列是否為「按正確順序鍵入之合理讀音」。
+  ///
+  /// 以本注拼槽當前之注音排列解讀輸入，逐鍵重播進一份影子注拼槽，並觀察聲、介、韻、調
+  /// 四槽的填值歷程。合格條件共五項：
+  /// 一、每個字元皆為當前排列之合法按鍵、且於重播時被接受；
+  /// 二、重播結束後組成之讀音可唸（isPronounceable）；
+  /// 三、最終仍填著之各槽，其「最終值」首度出現之鍵序，須隨聲→介→韻→調之槽序單調不減；
+  /// 四、重播期間若曾鍵入聲調，該聲調不得於最終狀態失落；
+  /// 五、於靜態注音排列、且非 suffixOnly
+  /// 時，不得以另一鍵改寫既有之槽值（即不接受「按錯再按對」之覆寫修正）。
+  ///
+  /// 條件三以「各槽最終值之首度出現鍵序」為準、不強求每一次寫入皆單調：動態注音排列
+  /// （大千26
+  /// 等）之合法編碼本即會對同一槽先後寫入不同值（例如「qquu」＝ㄅㄚ：首擊為ㄆ、
+  /// 次擊覆寫為ㄅ），逐寫單調會誤殺此類合法輸入。同理，同值之重複寫入不留下可觀測之變化、
+  /// 亦不影響判定。條件五僅適用於靜態注音排列（一鍵一注音者）：動態排列之合法編碼本即由
+  /// 引擎跨鍵改寫槽值（如倚天26
+  /// 之「ge」＝ㄐㄧ），拼音排列之組音區亦本就逐鍵清除重建——
+  /// 該二類情形下「以另一鍵覆寫修正」無以定義。
+  ///
+  /// 本函式僅為引擎層之結構檢定；讀音是否真實存在於辭典，屬 Lexicon
+  /// 之權責、不在檢定範圍。
+  /// @param input 傳入的按鍵序列（如大千排列之「cl」、漢語拼音之「suan3」）。
+  /// @param suffixOnly 傳入 true
+  /// 時放寬條件五（容忍覆寫修正），供「只檢定尾段（後綴）」之呼叫端使用。
+  /// @return 是否符合上述條件。
+  [[nodiscard]] bool isSequentiallyTypedRawKeyOrder(
+      const std::string& input, bool suffixOnly = false) const {
+    Composer shadow = *this;
+    shadow.clear();
+    // 槽序由本函式自行觀測，故不啟用引擎自帶之 CSVT 順序強制。
+    shadow.enforceCSVTOrdering = false;
+    // 各槽之「值 → 該值首度出現之鍵序」。
+    std::vector<std::map<std::string, int>> firstSeenBySlot(4);
+    std::vector<std::string> previousValues(4, "");
+    // 各槽現值之寫入者（鍵面字元）；供條件五判定「是否以另一鍵改寫」。
+    std::vector<std::string> lastWritingKeyBySlot(4, "");
+    // 條件五僅於靜態注音排列、且非 suffixOnly 模式下生效。
+    const bool isStaticZhuyin = parser != ofDachen26 && parser != ofETen26 &&
+                                parser != ofHsu && parser != ofStarlight &&
+                                parser != ofAlvinLiu && parser < 100;
+    const bool enforcesNoOverwriteCorrection = !suffixOnly && isStaticZhuyin;
+    bool toneEverTyped = false;
+    int keyOrder = 0;
+    for (const std::string& cp : splitByCodepoint(input)) {
+      if (!shadow.inputValidityCheckStr(cp)) return false;
+      if (!shadow.receiveKey(cp)) return false;
+      const std::vector<std::string> currentValues = {
+          shadow.consonant.value(),
+          shadow.semivowel.value(),
+          shadow.vowel.value(),
+          shadow.intonation.value(),
+      };
+      for (size_t slotIndex = 0; slotIndex < currentValues.size();
+           ++slotIndex) {
+        const std::string& value = currentValues[slotIndex];
+        if (value == previousValues[slotIndex]) continue;
+        if (enforcesNoOverwriteCorrection && !value.empty() &&
+            !previousValues[slotIndex].empty() &&
+            lastWritingKeyBySlot[slotIndex] != cp)
+          return false;
+        lastWritingKeyBySlot[slotIndex] = value.empty() ? std::string() : cp;
+        if (value.empty()) continue;
+        if (firstSeenBySlot[slotIndex].count(value) == 0)
+          firstSeenBySlot[slotIndex][value] = keyOrder;
+      }
+      previousValues = currentValues;
+      toneEverTyped = toneEverTyped || !shadow.intonation.isEmpty();
+      ++keyOrder;
+    }
+    if (!shadow.isPronounceable()) return false;
+    if (toneEverTyped && shadow.intonation.isEmpty()) return false;
+    int latestFirstSeen = -1;
+    const std::vector<std::string> finalValues = {
+        shadow.consonant.value(),
+        shadow.semivowel.value(),
+        shadow.vowel.value(),
+        shadow.intonation.value(),
+    };
+    for (size_t slotIndex = 0; slotIndex < finalValues.size(); ++slotIndex) {
+      const std::string& value = finalValues[slotIndex];
+      if (value.empty()) continue;
+      auto iter = firstSeenBySlot[slotIndex].find(value);
+      if (iter == firstSeenBySlot[slotIndex].end()) return false;
+      if (iter->second < latestFirstSeen) return false;
+      latestFirstSeen = iter->second;
+    }
+    return true;
+  }
+
   /// 拿取用來進行索引檢索用的注音字串。
   ///
   /// 如果輸入法的辭典索引是漢語拼音的話，你可能用不上這個函式。

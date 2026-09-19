@@ -23,7 +23,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Test target declarations.
-add_executable(TekkonTest ./GTests/TekkonTest.cc)
+add_executable(TekkonTest ./GTests/TekkonTest.cc ./GTests/TekkonTests_SequentialValidation.cc)
 target_link_libraries(TekkonTest gtest_main TekkonLib)
 include(GoogleTest)
 gtest_discover_tests(TekkonTest)
