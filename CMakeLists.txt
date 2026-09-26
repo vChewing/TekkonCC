@@ -23,7 +23,14 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 # Test target declarations.
-add_executable(TekkonTest ./GTests/TekkonTest.cc ./GTests/TekkonTests_SequentialValidation.cc ./GTests/TekkonTests_SyllableIndex.cc)
+# 測項檔案清單。注意：`./GTests/main.cc` **刻意不收**——本靶連結 `gtest_main`（見下行），
+# main 由該處提供；再收 main.cc 即為重複定義。
+add_executable(TekkonTest
+        ./GTests/TekkonTest.cc
+        ./GTests/TekkonTests_Arrangements.cc
+        ./GTests/TekkonTests_Pinyin.cc
+        ./GTests/TekkonTests_SequentialValidation.cc
+        ./GTests/TekkonTests_SyllableIndex.cc)
 target_link_libraries(TekkonTest gtest_main TekkonLib)
 include(GoogleTest)
 gtest_discover_tests(TekkonTest)
