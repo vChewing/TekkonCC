@@ -35,6 +35,9 @@ add_executable(TekkonTest
 target_link_libraries(TekkonTest gtest_main TekkonLib)
 include(GoogleTest)
 gtest_discover_tests(TekkonTest)
+# `gtest_discover_tests` 只是寫出各測項之 add_test 指令；若不開 enable_testing()，
+# 本目錄即不生成 CTestTestfile.cmake，`ctest` 會回報 0 個測項（而 runTest 仍可跑）。
+enable_testing()
 
 add_custom_target(
         runTest
