@@ -2534,6 +2534,56 @@ class Composer {
     return validKeyAvailable ? readingKey : "";
   }
 
+  // MARK: - Phonabet Auto-Chop Predicate
+
+  /// 本鍵是否應先自動切音節（**規格 v7，六條**；實作即該規格之逐條移植）。
+  ///
+  /// - Note: 本判準是**注拼槽狀態之純函式**——不讀 handler、不讀
+  /// session、不讀偏好，
+  ///   故得零成本驅動數十萬次（其回歸靶住在
+  ///   `GTests/TekkonTests_PhonabetAutoChopPredicate.cc` 與
+  ///   `Tests/TekkonCCTests/TekkonCCTests_PhonabetAutoChopPredicate.mm`）。
+  ///   生產側之呼叫者僅一處：判準在此、只回裁決；執行（寫入組字器／清注拼槽／補回本鍵）在彼。
+  ///
+  /// - Important:
+  /// 本判準之**權威規格**（逐條理由、四則對照實例、三條已知界線）住在
+  ///   vChewing 開發倉之 `Research/Phase250-ResearchAndNextSurgeryPlan.md`
+  ///   §3.2（v7）——
+  ///   該檔**不在本倉內**，故本檔以摘要自持：任何修訂都不得只動此處之實作而不動該正本，
+  ///   亦不得只動正本而不動此處。摘要：
+  ///
+  /// - **①** 注拼槽非空。
+  /// - **②** 本鍵非聲調鍵（以「本鍵施於空槽時是否寫入聲調」判之）。
+  /// - **④a** 本鍵未造成任何槽位變動 ⇒ **切**（冗餘鍵＝新音節之始）。
+  /// - **③** 固有目標槽 `S_new ≦ S_max`——`S_new`
+  ///   **取自「本鍵施於空槽時所寫入之首個非空槽」**，
+  ///   不得取「本次實際變動之最低槽」：後者會被動態排列之糾錯副作用（倚天26
+  ///   `be`＝ㄐㄧ：鍵 `e` 寫介母 ㄧ之餘另把 ㄓ 糾正為 ㄐ）誤導而使條件失效。
+  /// - **④b′** 結果為合法前綴且比原內容更長 ⇒ **不切**（真實延伸）。
+  /// - **④d** 本鍵所摧毀之各槽值恰為本鍵空槽試跑之產物 ⇒
+  /// **不切**（動態排列之逐槽覆寫）。
+  /// - **④c** 否則以接續探針定之：`當前讀音字串 ＋ emptyPost[S_new]`
+  ///   非任何讀音之前綴 ⇒ **切**。
+  ///
+  /// - Note: **定義置於本檔後段之 `SyllableIndex` 之後**——本判準需
+  ///   `SyllableIndex::isPrefix`，而該型別定義於 `Composer`
+  ///   之後。此即 C++ 對 Swift 版「同型別之他檔 extension」之對位。
+  ///
+  /// - Note: 本函式**非 `const`**——`Composer::isEmpty()`／`getComposition()` 與
+  ///   `Phonabet::value()` 皆未標 `const`，故無法在不動那三者之前提下寫成
+  ///   `const`。此為 C++ 版與 Swift 版唯一之形狀差異。
+  ///
+  /// @param key 本拍之按鍵（單一 Unicode 純量）。
+  /// @return 是否應先切音節。
+  [[nodiscard]] bool shouldAutoChopPhonabets(char32_t key);
+
+ private:
+  /// 四槽內容（聲／介／韻／調）。
+  [[nodiscard]] std::vector<std::string> phonabetAutoChopSlots();
+  /// 「最高已填之聲介韻槽位」＋1（全空為 0）。槽序：聲 1 ＜ 介 2 ＜ 韻 3。
+  [[nodiscard]] static int phonabetAutoChopHighestFilledSlot(
+      const std::vector<std::string>& slots);
+
  protected:
   // MARK: - Parser Processings
 
@@ -3584,6 +3634,95 @@ class SyllableIndex {
   static inline std::mutex sharedCacheMutex;
   static inline SyllableIndex* sharedCache = nullptr;
 };
+
+// MARK: - Phonabet Auto-Chop Predicate（Composer 之對外定義）
+
+/// 四槽內容（聲／介／韻／調）。
+inline std::vector<std::string> Composer::phonabetAutoChopSlots() {
+  return {consonant.value(), semivowel.value(), vowel.value(),
+          intonation.value()};
+}
+
+/// 「最高已填之聲介韻槽位」＋1（全空為 0）。槽序：聲 1 ＜ 介 2 ＜ 韻 3。
+inline int Composer::phonabetAutoChopHighestFilledSlot(
+    const std::vector<std::string>& slots) {
+  int result = 0;
+  for (int slot = 0; slot < 3; ++slot) {
+    if (slots[slot].empty()) continue;
+    if (slot + 1 > result) result = slot + 1;
+  }
+  return result;
+}
+
+inline bool Composer::shouldAutoChopPhonabets(char32_t key) {
+  if (isEmpty()) return false;  // ①
+  const std::string keyString = char32ToString(key);
+  if (keyString.empty()) return false;  // 對位 Swift 側之 guard let scalar。
+  const std::vector<std::string> pre = phonabetAutoChopSlots();
+  const int sMax = phonabetAutoChopHighestFilledSlot(pre);
+
+  // 雙探針：本鍵施於當前槽者為 probe，施於空槽者為 empty（本判準之參照系）。
+  Composer probe = *this;
+  probe.receiveKey(keyString);
+  const std::vector<std::string> post = probe.phonabetAutoChopSlots();
+  Composer empty("", parser);
+  empty.receiveKey(keyString);
+  const std::vector<std::string> emptyPost = empty.phonabetAutoChopSlots();
+
+  std::vector<int> changed;
+  bool intonationChanged = false;
+  for (int slot = 0; slot < 4; ++slot) {
+    if (pre[slot] == post[slot]) continue;
+    changed.push_back(slot);
+    if (slot == 3) intonationChanged = true;
+  }
+
+  // `S_new` 取自空槽試跑之首個非空槽（理由見 ③）。
+  int primarySlot = 0;
+  bool primarySlotFound = false;
+  for (int slot = 0; slot < 4; ++slot) {
+    if (emptyPost[slot].empty()) continue;
+    primarySlot = slot;
+    primarySlotFound = true;
+    break;
+  }
+  if (!primarySlotFound) {
+    for (const int slot : changed) {
+      if (slot >= 3) continue;
+      primarySlot = slot;
+      primarySlotFound = true;
+      break;
+    }
+  }
+  const int sNew = primarySlot + 1;
+  const std::string emptyPhonabet = emptyPost[primarySlot];
+
+  if (!emptyPost[3].empty() || intonationChanged) return false;  // ②
+  if (changed.empty()) return true;                              // ④a
+  if (sNew > sMax) return false;                                 // ③
+
+  const SyllableIndex& index = SyllableIndex::shared(parser);
+  const std::string probedContent = probe.getComposition();
+  // ④b′：逐碼點計長——聲調為 2 位元組、其餘注音符號為 3
+  // 位元組，位元組序與碼點序不一致，故不得以 std::string::size() 相較。
+  if (splitByCodepoint(probedContent).size() >
+          splitByCodepoint(getComposition()).size() &&
+      index.isPrefix(probedContent))
+    return false;
+
+  // ④d：本鍵所摧毀之各槽值，恰為本鍵自身於空槽試跑時之產物。
+  bool hasDestroyedSlot = false;
+  bool destroyedAllSelfWritten = true;
+  for (const int slot : changed) {
+    if (pre[slot].empty()) continue;
+    hasDestroyedSlot = true;
+    if (pre[slot] != emptyPost[slot]) destroyedAllSelfWritten = false;
+  }
+  if (hasDestroyedSlot && destroyedAllSelfWritten) return false;
+
+  // ④c：接續探針。
+  return !index.isPrefix(getComposition() + emptyPhonabet);
+}
 
 }  // namespace Tekkon
 
