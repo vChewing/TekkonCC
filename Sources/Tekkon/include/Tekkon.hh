@@ -574,8 +574,7 @@ inline static std::map<std::string, std::string> mapHanyuPinyin = {
     {"ya", "ㄧㄚ"},       {"ye", "ㄧㄝ"},       {"yi", "ㄧ"},
     {"yo", "ㄧㄛ"},       {"yu", "ㄩ"},         {"za", "ㄗㄚ"},
     {"ze", "ㄗㄜ"},       {"zi", "ㄗ"},         {"zu", "ㄗㄨ"},
-    {"a", "ㄚ"},          {"e", "ㄜ"},          {"o", "ㄛ"},
-    {"q", "ㄑ"}};
+    {"a", "ㄚ"},          {"e", "ㄜ"},          {"o", "ㄛ"}};
 
 /// 國音二式排列專用處理陣列
 inline static std::map<std::string, std::string> mapSecondaryPinyin = {
@@ -3466,6 +3465,124 @@ class PinyinTrie {
 
   static inline std::mutex sharedCacheMutex;
   static inline std::map<int, PinyinTrie*> sharedCache;
+};
+
+// MARK: - SyllableIndex
+
+/// 漢語音節之唯讀前綴索引。
+///
+/// 由 `mapHanyuPinyin` 之注音詞幹（426 條）派生，含其全部非空前綴（442 條）。
+/// 它只回答**一問**：「此串是否還可能延伸成某個合法讀音」——即前綴之成員資格。
+///
+/// 注意：本型別**不**回答「此串在辭典內有無詞條」。那是辭典之職責，兩者互不替代。
+///
+/// 注意：本型別**不**收錄單符號讀音（21 個聲母、16 個韻母）。單符號之合法性是
+/// **辭典之事實**、不是**音節表之事實**：其中 14 個聲母
+/// （ㄅ ㄆ ㄇ ㄈ ㄉ ㄊ ㄋ ㄌ ㄍ ㄎ ㄏ ㄐ ㄑ
+/// ㄒ）並非獨立音節，只是各自一族之嚴格前綴。
+///
+/// 注意：**排列中立**。注音是排列中立之表記，故 426 條詞幹對所有
+/// `MandarinParser` 皆相同， 今日全部排列共用同一份索引；`parser`
+/// 參數為未來之擴充位。
+///
+/// 用法：
+/// ```cpp
+/// auto& index = SyllableIndex::shared(ofDachen);
+/// index.isPrefix("ㄍ");    // true —— 還能延伸成 ㄍㄚ、ㄍㄜ…
+/// index.isPrefix("ㄍㄋ");  // false —— 不可能再延伸
+/// index.isComplete("ㄍ");  // false —— ㄍ 非獨立音節
+/// index.isComplete("ㄍㄚ");  // true
+/// ```
+class SyllableIndex {
+ public:
+  // MARK: Shared Cache
+
+  /// 取得共用之索引。
+  ///
+  /// 快取範式與 `PinyinTrie::shared` 一致（`std::mutex` ＋
+  /// 靜態指標），惟**只留一份**： 注音是排列中立之表記，見型別說明。
+  static SyllableIndex& shared(MandarinParser parser) {
+    std::lock_guard<std::mutex> lock(sharedCacheMutex);
+    if (sharedCache) return *sharedCache;
+    sharedCache = new SyllableIndex(parser);
+    return *sharedCache;
+  }
+
+  /// 清除共用快取。供測試使用。
+  static void clearSharedCache() {
+    std::lock_guard<std::mutex> lock(sharedCacheMutex);
+    delete sharedCache;
+    sharedCache = nullptr;
+  }
+
+  /// 全部完整讀音（426 條；升冪）。
+  ///
+  /// 此即**排列中立之正本**，亦是 `readings()` 之來源。
+  static const std::vector<std::string>& allReadings() {
+    static const std::vector<std::string> canonical = [] {
+      std::set<std::string> stems;
+      for (const auto& pair : mapHanyuPinyin) stems.insert(pair.second);
+      return std::vector<std::string>(stems.begin(), stems.end());
+    }();
+    return canonical;
+  }
+
+  /// 本索引持有之完整讀音（升冪）。今日恆等於 `allReadings()`。
+  const std::vector<std::string>& readings() const { return readings_; }
+
+  /// 該字串是否為某合法讀音之**完整**形式。
+  ///
+  /// - Warning:
+  /// **不得**以本函式當作「當前注拼槽可否提交」之依據。單聲母／單韻母乃原廠
+  ///   辭典之合法詞條，若以 `isComplete` 為閘則單聲母縮寫打法全滅。
+  bool isComplete(const std::string& reading) const {
+    return completeSet_.count(reading) > 0;
+  }
+
+  /// 該字串是否為某合法讀音之**非空**前綴（含其本身即完整者）。空字串恆為
+  /// `false`。
+  bool isPrefix(const std::string& reading) const {
+    return !reading.empty() && prefixSet_.count(reading) > 0;
+  }
+
+  /// 以該字串為前綴之全部完整讀音（升冪，內容穩定）。
+  ///
+  /// - Note: 對外暫緩公開（Swift 側為
+  /// `internal`）。目前之生產端消費者（自動切音節判準）
+  ///   只用 `isPrefix`，故不預先承諾此 API 之形狀。
+  std::vector<std::string> completions(const std::string& prefix) const {
+    std::vector<std::string> result;
+    for (const auto& reading : readings_) {
+      if (reading.compare(0, prefix.size(), prefix) == 0) {
+        result.push_back(reading);
+      }
+    }
+    return result;
+  }
+
+ private:
+  explicit SyllableIndex(MandarinParser parser) : parser_(parser) {
+    readings_ = allReadings();
+    for (const auto& reading : readings_) {
+      completeSet_.insert(reading);
+      // 以 UTF-8 碼點為界逐段取非空前綴（注音符號為 3 位元組）。
+      auto codepoints = splitByCodepoint(reading);
+      std::string accumulated;
+      for (const auto& codepoint : codepoints) {
+        accumulated += codepoint;
+        prefixSet_.insert(accumulated);
+      }
+    }
+  }
+
+  /// 本索引被要求服務之排列（診斷用；今日不影響內容）。
+  MandarinParser parser_;
+  std::vector<std::string> readings_;
+  std::set<std::string> completeSet_;
+  std::set<std::string> prefixSet_;
+
+  static inline std::mutex sharedCacheMutex;
+  static inline SyllableIndex* sharedCache = nullptr;
 };
 
 }  // namespace Tekkon
