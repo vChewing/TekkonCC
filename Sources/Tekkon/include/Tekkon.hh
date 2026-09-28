@@ -3599,9 +3599,14 @@ class SyllableIndex {
 
   /// 以該字串為前綴之全部完整讀音（升冪，內容穩定）。
   ///
-  /// - Note: 對外暫緩公開（Swift 側為
-  /// `internal`）。目前之生產端消費者（自動切音節判準）
-  ///   只用 `isPrefix`，故不預先承諾此 API 之形狀。
+  /// 以 `allReadings` 逐條過濾實作——426 條線性掃描，**非熱路徑**
+  /// （只在前綴不完整時才需列舉）。
+  ///
+  /// - Note: **已升為公開**（Swift 側自 P267 起為
+  /// `public`）——生產端消費者為狂打模式之前方
+  ///   讀音桶（`furiousFrontContext`）：注音側遇「未完成之合法前綴」（單聲母等）時，以此列舉
+  ///   可補全之完整讀音，與拼音側「由字母流反推可能音節」同構。**不得**以本函式之結果當
+  ///   「可否提交」之依據（見 `isComplete` 之警告）。
   std::vector<std::string> completions(const std::string& prefix) const {
     std::vector<std::string> result;
     for (const auto& reading : readings_) {
