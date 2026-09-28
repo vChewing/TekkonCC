@@ -18,7 +18,7 @@ using namespace Tekkon;
 @implementation TekkonCCTests_Utilities
 
 - (void)test_Utilities_RestoreToneOneEdgeCases {
-  // 空字串防呆（對齊 Swift / C# 版行為）。
+  // 空字串防呆。
   XCTAssertEqual(restoreToneOneInPhona(""), "");
   XCTAssertEqual(restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   XCTAssertEqual(restoreToneOneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");

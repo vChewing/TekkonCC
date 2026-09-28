@@ -2,11 +2,9 @@
 // ====================
 // This code is released under the SPDX-License-Identifier: `LGPL-3.0-or-later`.
 
-// 對應 Swift 版 Tests/TekkonTests/TekkonTests_SyllableIndex.swift 之九支測項，
-// 暨 TekkonTests_Pinyin.swift 之
-// <PinyinSingleLetterEntries_AreRealSyllablesOnly>。
+// 讀音前綴索引（`SyllableIndex`）之九支測項，暨漢語拼音單字母條目之解碼契約。
 //
-// 索引之語意與兩條紅線見 Sources/Tekkon/include/Tekkon.hh 之 SyllableIndex
+// 索引之語意與使用界線見 Sources/Tekkon/include/Tekkon.hh 之 SyllableIndex
 // 說明。 本檔之斷言分三類：① 資料規模（426／442／16／37 四項可稽核數字）；②
 // 成員資格之正反例； ③ 與引擎既有表（allowedConsonants
 // 等）及測試素材之交叉比對。
@@ -319,7 +317,7 @@ TEST(TekkonTests_SyllableIndex, HanyuPinyinSingleLetterEntries) {
   EXPECT_EQ(vowelKeyToComposition('e'), "ㄜ");
   EXPECT_EQ(vowelKeyToComposition('o'), "ㄛ");
 
-  // 狂拼之自動切音節：`q`＋`f` 與 `b`＋`f` 皆不提交（nullopt）。
+  // 自動切音節：`q`＋`f` 與 `b`＋`f` 皆不提交（nullopt）。
   for (const std::string& first : {"q", "b", "z"}) {
     Composer composer("", ofHanyuPinyin);
     composer.allowsExtendedRomajiBuffer = true;

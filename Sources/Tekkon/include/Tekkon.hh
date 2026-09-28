@@ -5,11 +5,11 @@
 // ADVICE: Save as UTF8 without BOM signature!!!
 
 /// 鐵恨引擎是 OVMandarin 的繼任者，支援酷音大千26排列、以及更多種類的拼音輸入。
-/// 因為 Cpp 講究事物相生順序，所以很多龐大的陣列常數不能像 Swift 原版的鐵恨引擎
-/// 那樣放在檔案末尾，就只能放在檔案開頭了。另外，Cpp 的 select case 語句是可以
-/// 將 std::string 拿來 switch 的，但必須做雜湊化處理（hashify）使其整數化。
+/// 因為 Cpp 講究事物相生順序，很多龐大的陣列常數只能放在檔案開頭。另外，Cpp 的
+/// select case 語句是可以將 std::string 拿來 switch 的，但必須做雜湊化處理
+/// （hashify）使其整數化。
 ///
-/// 版本 1.7.0 變更（從 Swift Tekkon v1.7.0 移植）：
+/// 版本 1.7.0 變更：
 /// - 注音符元的核心資料型別從 std::string 變更為 char32_t（Unicode 純量）
 /// - allowedConsonants、allowedSemivowels、allowedVowels、allowedIntonations
 ///   現在使用 char32_t
@@ -1403,8 +1403,7 @@ inline static std::map<std::string, std::string> mapQwertyIBM = {
     {"z", "ㄡ"}, {" ", " "}};
 
 /// 精業排列專用處理陣列。
-/// 注意：ㄨ 之鍵位為 `[`。此處曾於 C++ 移植時誤植為 `{`（3b7dc43），
-/// 致使本排列之 ㄨ 系讀音全數無法輸入；現依 Swift 版與 C# 版更正。
+/// 注意：ㄨ 之鍵位為 `[`。
 inline static std::map<std::string, std::string> mapSeigyou = {
     {"a", "ˇ"},  {"b", "ㄒ"}, {"c", "ㄌ"}, {"d", "ㄋ"}, {"e", "ㄊ"},
     {"f", "ㄎ"}, {"g", "ㄑ"}, {"h", "ㄕ"}, {"i", "ㄛ"}, {"j", "ㄘ"},
@@ -1568,7 +1567,7 @@ inline static std::string cnvPhonaToTextbookStyle(std::string target) {
 /// @param target 要拿來做轉換處理的讀音。
 /// @returns 經過轉換處理的讀音鏈。
 inline static std::string restoreToneOneInPhona(std::string target) {
-  // 空字串防呆（對齊 Swift / C# 版行為）。
+  // 空字串防呆。
   if (target.empty()) return target;
   std::string result = target;
   if (result.find("ˊ") == std::string::npos &&
@@ -1782,11 +1781,11 @@ class Composer {
   /// 此特性僅供部分特殊場合使用，等同於停用並擊特性。
   bool enforceCSVTOrdering = false;
 
-  /// 是否允許 romajiBuffer 超過單音節長度上限（狂拼等多音節簡拼字母流需要）。
+  /// 是否允許 romajiBuffer 超過單音節長度上限（多音節簡拼字母流需要）。
   ///
   /// 預設 false：維持既有 FIFO 音頭丟棄防呆——正常拼音單音節最長 6 碼
   /// （Wade-Giles 7 碼），超出時自動丟棄最早輸入的音頭、防止 buffer 無限增長。
-  /// 設為 true 時不做音頭丟棄：呼叫端（狂拼模式）負責在固化／提交／auto-chop 時
+  /// 設為 true 時不做音頭丟棄：呼叫端負責在固化／提交／auto-chop 時
   /// 清空或重建注拼槽，使多音節簡拼字母流（如「slliang」）完整保留、
   /// 不會被截斷成「lliang」而丟失前導字母。
   bool allowsExtendedRomajiBuffer = false;
@@ -2022,7 +2021,7 @@ class Composer {
     } else {
       // 為了防止 RomajiBuffer 越敲越長帶來算力負擔，
       // 這裡讓它在要溢出時自動丟掉最早輸入的音頭。
-      // 狂拼等多音節簡拼字母流可超過單音節長度上限，此時由
+      // 多音節簡拼字母流可超過單音節長度上限，此時由
       // allowsExtendedRomajiBuffer
       // 關閉音頭丟棄、改由呼叫端負責在固化／提交時清空注拼槽——否則「slliang」類
       // 輸入會被截斷成「lliang」、丟失前導字母。
@@ -2538,20 +2537,10 @@ class Composer {
 
   // MARK: - Phonabet Auto-Chop Predicate
 
-  /// 本鍵是否應先自動切音節（**規格 v7，六條**；實作即該規格之逐條移植）。
+  /// 本鍵是否應先自動切音節。
   ///
-  /// - Note: 本判準是**注拼槽狀態之純函式**——不讀 handler、不讀
-  /// session、不讀偏好，
-  ///   故得零成本驅動數十萬次（其回歸靶住在
-  ///   `GTests/TekkonTests_PhonabetAutoChopPredicate.cc` 與
-  ///   `Tests/TekkonCCTests/TekkonCCTests_PhonabetAutoChopPredicate.mm`）。
-  ///   生產側之呼叫者僅一處：判準在此、只回裁決；執行（寫入組字器／清注拼槽／補回本鍵）在彼。
-  ///
-  /// - Important:
-  /// 本判準之**權威規格**（逐條理由、四則對照實例、三條已知界線）住在
-  ///   vChewing 輸入法專案之研究文件（v7）——
-  ///   該檔**不在本倉內**，故本檔以摘要自持：任何修訂都不得只動此處之實作而不動該正本，
-  ///   亦不得只動正本而不動此處。摘要：
+  /// 本判準是**注拼槽狀態之純函式**：只讀注拼槽、不做任何提交，故可零成本反覆試探。
+  /// 判準依序如下：
   ///
   /// - **①** 注拼槽非空。
   /// - **②** 本鍵非聲調鍵（以「本鍵施於空槽時是否寫入聲調」判之）。
@@ -2567,12 +2556,11 @@ class Composer {
   ///   非任何讀音之前綴 ⇒ **切**。
   ///
   /// - Note: **定義置於本檔後段之 `SyllableIndex` 之後**——本判準需
-  ///   `SyllableIndex::isPrefix`，而該型別定義於 `Composer`
-  ///   之後。此即 C++ 對 Swift 版「同型別之他檔 extension」之對位。
+  ///   `SyllableIndex::isPrefix`，而該型別定義於 `Composer` 之後。
   ///
   /// - Note: 本函式**非 `const`**——`Composer::isEmpty()`／`getComposition()` 與
   ///   `Phonabet::value()` 皆未標 `const`，故無法在不動那三者之前提下寫成
-  ///   `const`。此為 C++ 版與 Swift 版唯一之形狀差異。
+  ///   `const`。
   ///
   /// @param key 本拍之按鍵（單一 Unicode 純量）。
   /// @return 是否應先切音節。
@@ -3261,7 +3249,7 @@ class PinyinTrie {
     return collectAllDescendantEntries(*currentNode);
   }
 
-  /// 用來像智能狂拼/搜狗拼音那樣處理一個連續的簡拼字串、切割成多個可能的合理讀音前綴。
+  /// 把一個連續的簡拼字串切割成多個可能的合理讀音前綴。
   ///
   /// 比如說全拼「shi4jie4da4zhan4」可能會簡拼成「shjdaz」。
   /// 此時的理想切片結果是：["sh","j","da","z"]。
@@ -3270,7 +3258,7 @@ class PinyinTrie {
     int complexLength = static_cast<int>(readingComplex.length());
 
     // Pinyin parser 走 trie 走訪：沿輸入字元貪婪下探，最長可達路徑
-    // 即為「是某讀音前綴」的最長 blob——狂拼／auto-chop
+    // 即為「是某讀音前綴」的最長 blob——簡拼／auto-chop
     // 的輸入皆為無調詞幹（聲調走 intonation），與既有
     // allPossibleReadings（含聲調後綴）語義在實際輸入下等價； trie
     // 由全部讀音詞幹建立，故「blob 存在於 trie」＝「blob 是某讀音前綴」。 非
@@ -3332,7 +3320,7 @@ class PinyinTrie {
   ///
   /// 當輸入恰好是完整音節時，僅回傳該音節對應的注音；否則回傳所有以該輸入為前綴的
   /// 音節所對應的注音（去重且排序，以保證輸出內容穩定）。
-  /// 這個函式是「狂拼模式」前方讀音預覽的基礎：讓尚未打完的拼音也能即時組句試算。
+  /// 讓尚未打完的拼音也能即時組句試算。
   /// - Parameter romaji: 拼音組音區的暫存內容。
   /// - Returns: 對應的注音讀音清單；無法解析時回傳空陣列。
   std::vector<std::string> zhuyinReadings(const std::string& romaji) {
@@ -3601,11 +3589,8 @@ class SyllableIndex {
   /// 以 `allReadings` 逐條過濾實作——426 條線性掃描，**非熱路徑**
   /// （只在前綴不完整時才需列舉）。
   ///
-  /// - Note: **已升為公開**（Swift 側為
-  /// `public`）——生產端消費者為狂打模式之前方
-  ///   讀音桶（`furiousFrontContext`）：注音側遇「未完成之合法前綴」（單聲母等）時，以此列舉
-  ///   可補全之完整讀音，與拼音側「由字母流反推可能音節」同構。**不得**以本函式之結果當
-  ///   「可否提交」之依據（見 `isComplete` 之警告）。
+  /// - Note: 遇「未完成之合法前綴」（如單聲母）時，可以此列舉可補全之完整讀音。
+  ///   **不得**以本函式之結果當「可否提交」之依據（見 `isComplete` 之警告）。
   std::vector<std::string> completions(const std::string& prefix) const {
     std::vector<std::string> result;
     for (const auto& reading : readings_) {
@@ -3663,7 +3648,7 @@ inline int Composer::phonabetAutoChopHighestFilledSlot(
 inline bool Composer::shouldAutoChopPhonabets(char32_t key) {
   if (isEmpty()) return false;  // ①
   const std::string keyString = char32ToString(key);
-  if (keyString.empty()) return false;  // 對位 Swift 側之 guard let scalar。
+  if (keyString.empty()) return false;  // 空鍵防呆。
   const std::vector<std::string> pre = phonabetAutoChopSlots();
   const int sMax = phonabetAutoChopHighestFilledSlot(pre);
 

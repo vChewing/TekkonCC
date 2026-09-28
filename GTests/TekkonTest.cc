@@ -8042,7 +8042,7 @@ TEST(TekkonTests_Advanced, AlvinLiuKeys) {
 }
 
 TEST(TekkonTests_Utilities, RestoreToneOneEdgeCases) {
-  // 空字串防呆（對齊 Swift / C# 版行為）。
+  // 空字串防呆。
   ASSERT_EQ(restoreToneOneInPhona(""), "");
   ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");

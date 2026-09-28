@@ -4,8 +4,7 @@
 
 // ADVICE: Save as UTF8 without BOM signature!!!
 
-// 對應 Swift 版 Tests/TekkonTests/TekkonTests_SequentialValidation.swift
-// 之五支測項。
+// 循序輸入檢定（`isSequentiallyTypedRawKeyOrder`）之五支測項。
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
@@ -30,8 +29,7 @@ struct SequentialValidationTestCase {
   bool expected;
 };
 
-/// 依空白切分（連續空白視為單一分隔、不產生空 token），
-/// 等同 Swift 之 `line.split(separator: " ")` 行為。
+/// 依空白切分（連續空白視為單一分隔、不產生空 token）。
 std::vector<std::string> splitByWhitespace(const std::string& line) {
   std::vector<std::string> tokens;
   std::istringstream stream(line);

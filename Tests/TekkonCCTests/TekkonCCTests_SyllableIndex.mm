@@ -4,10 +4,8 @@
 
 // ADVICE: Save as UTF8 without BOM signature!!!
 
-// 對應 Swift 版 Tests/TekkonTests/TekkonTests_SyllableIndex.swift 之九支測項，
-// 暨 TekkonTests_Pinyin.swift 之
-// <PinyinSingleLetterEntries_AreRealSyllablesOnly>。 與
-// GTests/TekkonTests_SyllableIndex.cc 內容雷同，僅測試框架不同。
+// 讀音前綴索引（`SyllableIndex`）之九支測項，暨漢語拼音單字母條目之解碼契約。
+// 與 GTests/TekkonTests_SyllableIndex.cc 內容雷同，僅測試框架不同。
 
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
@@ -319,7 +317,7 @@ std::string firstCodepoint(const std::string& reading) {
     XCTAssertEqual(composer.getComposition(), pair.second);
   }
 
-  // 狂拼之自動切音節：`q`＋`f` 與 `b`／`z`＋`f` 皆不提交（nullopt）。
+  // 自動切音節：`q`＋`f` 與 `b`／`z`＋`f` 皆不提交（nullopt）。
   for (const std::string& first : {"q", "b", "z"}) {
     Composer composer = Composer("", ofHanyuPinyin);
     composer.allowsExtendedRomajiBuffer = true;
