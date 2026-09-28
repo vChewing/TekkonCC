@@ -39,46 +39,6 @@ std::string formatSeconds(double seconds, int digits) {
 }
 
 /// `MandarinParser` 本身沒有可讀的名稱標籤，故於測試端就地提供，
-/// 僅供輸出之用。
-std::string parserNameTag(MandarinParser parser) {
-  switch (parser) {
-    case ofDachen:
-      return "Dachen";
-    case ofDachen26:
-      return "Dachen26";
-    case ofETen:
-      return "ETen";
-    case ofETen26:
-      return "ETen26";
-    case ofHsu:
-      return "Hsu";
-    case ofIBM:
-      return "IBM";
-    case ofMiTAC:
-      return "MiTAC";
-    case ofSeigyou:
-      return "Seigyou";
-    case ofFakeSeigyou:
-      return "FakeSeigyou";
-    case ofStarlight:
-      return "Starlight";
-    case ofAlvinLiu:
-      return "AlvinLiu";
-    case ofHanyuPinyin:
-      return "HanyuPinyin";
-    case ofSecondaryPinyin:
-      return "SecondaryPinyin";
-    case ofYalePinyin:
-      return "YalePinyin";
-    case ofHualuoPinyin:
-      return "HualuoPinyin";
-    case ofUniversalPinyin:
-      return "UniversalPinyin";
-    case ofWadeGilesPinyin:
-      return "WadeGilesPinyin";
-  }
-  return std::to_string(static_cast<int>(parser));
-}
 
 }  // namespace
 
@@ -106,8 +66,8 @@ std::string parserNameTag(MandarinParser parser) {
     });
 
     const double avgTime = timeDelta / static_cast<double>(iterations);
-    std::cout << " -> [Tekkon][(" << parserNameTag(parser) << ")] "
-              << iterations << " iterations in " << formatSeconds(timeDelta, 4)
+    std::cout << " -> [Tekkon][(" << nameTag(parser) << ")] " << iterations
+              << " iterations in " << formatSeconds(timeDelta, 4)
               << "s (avg: " << formatSeconds(avgTime, 6) << "s per iteration)"
               << std::endl;
 

@@ -1711,6 +1711,54 @@ inline static std::vector<MandarinParser> allStaticZhuyinCases() {
   return result;
 }
 
+/// 該排列之診斷用名稱（如 `Dachen26`、`HanyuPinyin`）。
+///
+/// **公開之緣由**：排列之列舉值對日誌、錯誤訊息與效能輸出之讀者毫無意義；而凡需要可讀
+/// 名字者若各自另立名稱表，即註定與此處漂移。故以本函式為唯一正本：新增排列時只需改動
+/// 一處，且各語言版本之名稱得以一致。
+///
+/// - Warning:
+/// 名稱僅供顯示與除錯，**不得**作為語意判斷、檔案格式或序列化之依據。
+inline static std::string nameTag(MandarinParser parser) {
+  switch (parser) {
+    case ofDachen:
+      return "Dachen";
+    case ofDachen26:
+      return "Dachen26";
+    case ofETen:
+      return "ETen";
+    case ofETen26:
+      return "ETen26";
+    case ofHsu:
+      return "Hsu";
+    case ofIBM:
+      return "IBM";
+    case ofMiTAC:
+      return "MiTAC";
+    case ofSeigyou:
+      return "Seigyou";
+    case ofFakeSeigyou:
+      return "FakeSeigyou";
+    case ofStarlight:
+      return "Starlight";
+    case ofAlvinLiu:
+      return "AlvinLiu";
+    case ofHanyuPinyin:
+      return "HanyuPinyin";
+    case ofSecondaryPinyin:
+      return "SecondaryPinyin";
+    case ofYalePinyin:
+      return "YalePinyin";
+    case ofHualuoPinyin:
+      return "HualuoPinyin";
+    case ofUniversalPinyin:
+      return "UniversalPinyin";
+    case ofWadeGilesPinyin:
+      return "WadeGilesPinyin";
+  }
+  return std::to_string(static_cast<int>(parser));
+}
+
 /// 該排列之「拼音 → 注音」對照表；非拼音排列時為 `nullptr`。
 inline static const std::map<std::string, std::string>* mapZhuyinPinyin(
     MandarinParser parser) {

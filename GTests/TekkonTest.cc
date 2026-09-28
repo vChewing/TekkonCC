@@ -242,6 +242,18 @@ TEST(TekkonTests_Basic, MandarinParser) {
   EXPECT_EQ(allPinyinCases().size() + allDynamicZhuyinCases().size() +
                 allStaticZhuyinCases().size(),
             allCases().size());
+  // 診斷用名稱：全體互異，且不得退化為數值字串。
+  std::set<std::string> nameTags;
+  for (MandarinParser parser : allCases()) {
+    const std::string tag = nameTag(parser);
+    EXPECT_FALSE(tag.empty());
+    EXPECT_NE(tag, std::to_string(static_cast<int>(parser)));
+    nameTags.insert(tag);
+  }
+  EXPECT_EQ(nameTags.size(), allCases().size());
+  EXPECT_EQ(nameTag(ofDachen), "Dachen");
+  EXPECT_EQ(nameTag(ofHanyuPinyin), "HanyuPinyin");
+
   const std::vector<MandarinParser> staticCases = allStaticZhuyinCases();
   for (MandarinParser parser : allCases()) {
     EXPECT_EQ(isPinyin(parser), parser >= 100);

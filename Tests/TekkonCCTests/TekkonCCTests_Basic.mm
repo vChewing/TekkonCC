@@ -284,6 +284,18 @@ using namespace Tekkon;
   XCTAssertEqual(allPinyinCases().size() + allDynamicZhuyinCases().size() +
                      allStaticZhuyinCases().size(),
                  allCases().size());
+  // 診斷用名稱：全體互異，且不得退化為數值字串。
+  std::set<std::string> nameTags;
+  for (MandarinParser parser : allCases()) {
+    const std::string tag = nameTag(parser);
+    XCTAssertFalse(tag.empty());
+    XCTAssertTrue(tag != std::to_string(static_cast<int>(parser)));
+    nameTags.insert(tag);
+  }
+  XCTAssertEqual(nameTags.size(), allCases().size());
+  XCTAssertTrue(nameTag(ofDachen) == "Dachen");
+  XCTAssertTrue(nameTag(ofHanyuPinyin) == "HanyuPinyin");
+
   const std::vector<MandarinParser> staticCases = allStaticZhuyinCases();
   for (MandarinParser parser : allCases()) {
     XCTAssertEqual(isPinyin(parser), parser >= 100);
