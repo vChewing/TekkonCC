@@ -12,7 +12,7 @@
 // 本檔**不**自帶任何「測試端參考實作」——判準之正本只有一處
 // （`Composer::shouldAutoChopPhonabets`），本檔直接驅動它，杜絕「兩份各自演化之判準」。
 //
-// 四項地面真相（與 P251 之結論逐項對應）：
+// 四項地面真相（與術前驗證之結論逐項對應）：
 //   ① 合法單音節編碼之**每一個中途前綴**皆不得觸發切音節；
 //   ② 音節交界處**必須**切（殘餘漏切率 < 5%）；
 //   ③ 單聲母縮寫（`ess`＝ㄍㄋㄋ）須得三顆鍵；
@@ -21,7 +21,7 @@
 // 語料（1485 列 × 5 動態排列）**不另抄一份**，而是自
 // `Tests/TestAssets_Tekkon/TekkonTestData.hh` 就地解析——故語料仍為單一正本。
 //
-// 靶之**輸入域**（P261 之 CI 跟進）：候選鍵與語料單元格皆須落在鍵面字元域內
+// 靶之**輸入域**（CI 跟進）：候選鍵與語料單元格皆須落在鍵面字元域內
 // （僅 ASCII 字母與數字）。素材檔內之反引號（`` `NULL``）與尾端空格（源自
 // `__`）
 // 皆為「本排列無此鍵」之標記，**非按鍵**；先前之版本把兩者一併當成候選鍵，
@@ -29,9 +29,8 @@
 // 之鍵序——而判準對非注音按鍵之反應隨平台而異（Linux 誤切 7366 次、Windows
 // 語料整批讀不到）。**此為靶之缺陷，非判準之缺陷**；判準本身未動。
 //
-// 語料之**載入**（P261 之 CI 跟進 2，Swift 側
-// `aec2f32`）：本倉之語料是編譯期常數 （`TekkonTestData.hh` 之原始字串），故
-// Swift 側該次所加之「候選路徑清單」與
+// 語料之**載入**（CI 跟進 2）：本倉之語料是編譯期常數 （`TekkonTestData.hh`
+// 之原始字串），故 Swift 側該次所加之「候選路徑清單」與
 // 「讀不到時附上嘗試紀錄」在本倉**結構上無對位**——檔案根本不會開不成。本倉取該次
 // 之兩項可移植者：行尾正規化（Windows checkout 之
 // CRLF），以及把「原始列數／過濾後
@@ -69,7 +68,7 @@ struct AutoChopCorpus {
   /// Swift
   /// 側之同項尚須列出嘗試過的檔案路徑；本倉之語料是**編譯期常數**，讀不到係
   /// 結構上不可能，故本項只報來源與兩個列數——「沒讀到」與「讀到了但濾掉幾列」在本倉
-  /// 只能是後者，而兩者之數值仍須一眼可辨（P261 之 CI 通則 (b)／(d)）。
+  /// 只能是後者，而兩者之數值仍須一眼可辨。
   std::string report() const {
     return std::string(
                "語料來源：Tests/TestAssets_Tekkon/TekkonTestData.hh 之 "
@@ -117,7 +116,7 @@ std::string replaceUnderscores(const std::string& str) {
 ///
 /// 本倉之素材是原始字串常數（`TekkonTestData.hh`）：版控內為 LF，但 Windows 之
 /// checkout 可能改寫為 CRLF。此處顯式正規化，免日後之解析器倚賴「`operator>>`
-/// 恰好 把 `\r` 當空白」這種隱性性質——Swift 側之同一步係 `aec2f32` 所加。
+/// 恰好 把 `\r` 當空白」這種隱性性質。
 std::string normalizeLineEndings(const std::string& text) {
   std::string result;
   result.reserve(text.size());
@@ -200,7 +199,7 @@ std::vector<std::string> candidateKeys() {
 /// 自素材檔就地解析 `testTable4DynamicLayouts` 之內容。
 ///
 /// 僅解析一次，`rows` 與 `rawRowCount` 共用——**語料讀不到時必須大聲失敗**
-/// （P261 之 CI 實錄：Windows
+/// （CI 實錄：Windows
 /// 之語料整批讀不到，而當時之靶只在兩處下界斷言上失手）。
 AutoChopCorpus autoChopCorpus() {
   AutoChopCorpus corpus;
@@ -331,9 +330,9 @@ TEST(TekkonTests_PhonabetAutoChopPredicate, NeverFiresWithinASyllable) {
     }
   }
 
-  // 前綴集由 `readings()` 就地推導——索引本身刻意不暴露 `allPrefixes`（P252
-  // 之裁定：只答「是否為前綴」一問），故本靶自行展開、再逐條以 `isPrefix`
-  // 交叉驗證。
+  // 前綴集由 `readings()` 就地推導——索引本身刻意不暴露
+  // `allPrefixes`（只答「是否為前綴」一問），故本靶自行展開、再逐條以
+  // `isPrefix` 交叉驗證。
   const SyllableIndex& index = SyllableIndex::shared(ofDachen);
   std::set<std::string> allPrefixes;
   for (const auto& reading : index.readings()) {
@@ -430,8 +429,7 @@ TEST(TekkonTests_PhonabetAutoChopPredicate, FiresAtJunctions) {
         Composer probe = composer;
         probe.receiveKey(key);
         const std::string postContent = probe.getComposition();
-        // 於**當前狀態**下寫入聲調槽者（聲調鍵／空格）由既有管線固化，不屬本案（照
-        // P251 之守衛）。
+        // 於**當前狀態**下寫入聲調槽者（聲調鍵／空格）由既有管線固化，不屬本案（照原靶之守衛）。
         if (probe.intonation.value() != composer.intonation.value()) continue;
         const bool greedy =
             index.isPrefix(postContent) &&
@@ -453,7 +451,7 @@ TEST(TekkonTests_PhonabetAutoChopPredicate, FiresAtJunctions) {
   EXPECT_GT(checked, 0LL) << "受檢交界僅 " << checked << "："
                           << "\n"
                           << corpus.report();
-  // P251 之實測為 2.19%；此處以 5% 為上限——殘餘之成因（與 `qquu`
+  // 術前驗證之實測為 2.19%；此處以 5% 為上限——殘餘之成因（與 `qquu`
   // 之逐槽覆寫在局部可觀測量上同構）已證不可由局部判準分離，屬**已知界線**。
   const double rate = static_cast<double>(missed) * 100.0 /
                       static_cast<double>(checked > 0 ? checked : 1);
