@@ -234,6 +234,165 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
             "ㄅㄧㄢˋ-˙ㄌㄜ-ㄊㄧㄢ");
 }
 
+TEST(TekkonTests_Basic, MandarinParser) {
+  // 排列家族：拼音、動態注音、靜態注音三者互斥，其聯集為全體。
+  EXPECT_EQ(allPinyinCases().size(), 6UL);
+  EXPECT_EQ(allDynamicZhuyinCases().size(), 5UL);
+  EXPECT_EQ(allStaticZhuyinCases().size(), 6UL);
+  EXPECT_EQ(allPinyinCases().size() + allDynamicZhuyinCases().size() +
+                allStaticZhuyinCases().size(),
+            allCases().size());
+  const std::vector<MandarinParser> staticCases = allStaticZhuyinCases();
+  for (MandarinParser parser : allCases()) {
+    EXPECT_EQ(isPinyin(parser), parser >= 100);
+    if (isPinyin(parser)) EXPECT_FALSE(isDynamic(parser));
+    const bool isStatic =
+        std::count(staticCases.begin(), staticCases.end(), parser) == 1;
+    EXPECT_TRUE(isPinyin(parser) || isDynamic(parser) || isStatic);
+  }
+
+  // 「拼音 -> 注音」對照表僅拼音排列有之。
+  EXPECT_EQ(mapZhuyinPinyin(ofDachen), nullptr);
+  ASSERT_NE(mapZhuyinPinyin(ofHanyuPinyin), nullptr);
+  EXPECT_EQ(mapZhuyinPinyin(ofHanyuPinyin)->size(), 426UL);
+
+  // 全部可能讀音＝讀音詞幹 ＋ 其與各聲調之組合；聲調之表記隨排列家族而異。
+  const std::set<std::string> hanyuReadings =
+      allPossibleReadings(ofHanyuPinyin);
+  EXPECT_EQ(hanyuReadings.count("bian"), 1UL);
+  EXPECT_EQ(hanyuReadings.count("bian1"), 1UL);
+  EXPECT_EQ(hanyuReadings.count("bian5"), 1UL);
+  EXPECT_EQ(hanyuReadings.count("bianˊ"), 0UL);
+  const std::set<std::string> dachenReadings = allPossibleReadings(ofDachen);
+  EXPECT_EQ(dachenReadings.count("ㄅㄧㄢ"), 1UL);
+  EXPECT_EQ(dachenReadings.count("ㄅㄧㄢˋ"), 1UL);
+  EXPECT_EQ(dachenReadings.count("ㄅㄧㄢ "), 1UL);
+
+  // 逐排列送鍵（含非按鍵之輸入），再清空；每一條排列分支皆須走過且不得崩潰。
+  Composer composer("", ofDachen);
+  EXPECT_TRUE(composer.isEmpty());
+  EXPECT_EQ(composer.count(true), 0);
+  EXPECT_EQ(composer.count(false), 0);
+  for (MandarinParser parser : allCases()) {
+    composer.ensureParser(parser);
+    composer.receiveKey("q");
+    composer.receiveKey("幹");
+    composer.receiveKey("3");
+    composer.receiveKey("1");
+    composer.clear();
+    EXPECT_TRUE(composer.isEmpty());
+  }
+}
+
+TEST(TekkonTests_Basic, ChoppingRawComplex) {
+  PinyinTrie trieZhuyin(ofDachen);
+  PinyinTrie triePinyin(ofHanyuPinyin);
+  {
+    // 注音排列：以讀音表逐段做最長前綴比對。
+    EXPECT_EQ(trieZhuyin.chop("ㄅㄩㄝㄓㄨㄑㄕㄢㄌㄧㄌㄧㄤ"),
+              (std::vector<std::string>{"ㄅ", "ㄩㄝ", "ㄓㄨ", "ㄑ", "ㄕㄢ",
+                                        "ㄌㄧ", "ㄌㄧㄤ"}));
+    // 漢語拼音：沿 trie 貪婪下探。
+    EXPECT_EQ(triePinyin.chop("byuezqsll"),
+              (std::vector<std::string>{"b", "yue", "z", "q", "s", "l", "l"}));
+    EXPECT_EQ(trieZhuyin.chop("ㄕㄐㄧㄉㄓ"),
+              (std::vector<std::string>{"ㄕ", "ㄐㄧ", "ㄉ", "ㄓ"}));
+  }
+  {
+    const std::vector<std::string> choppedPinyin = triePinyin.chop("yod");
+    EXPECT_EQ(choppedPinyin, (std::vector<std::string>{"yo", "d"}));
+    // 切分結果再展開為注音：單一拼音切片可以對應多個注音。
+    const std::vector<std::string> deducted =
+        triePinyin.deductChoppedPinyinToZhuyin(choppedPinyin);
+    ASSERT_FALSE(deducted.empty());
+    EXPECT_EQ(deducted.front(), "ㄧㄛ&ㄧㄡ&ㄩㄥ");
+  }
+}
+
+TEST(TekkonTests_Basic, PinyinTrieBranchInsertKeepsExistingBranches) {
+  // 在同一節點底下追加多個分支時，既有的詞條不得被覆蓋。
+  PinyinTrie trie(ofDachen);
+  trie.insert("li", "ㄌㄧ");
+  trie.insert("lin", "ㄌㄧㄣ");
+  trie.insert("liu", "ㄌㄧㄡ");
+
+  const std::vector<std::string> fetched = trie.search("li");
+  EXPECT_TRUE(contains(fetched, std::string("ㄌㄧ")));
+  EXPECT_TRUE(contains(fetched, std::string("ㄌㄧㄣ")));
+  EXPECT_TRUE(contains(fetched, std::string("ㄌㄧㄡ")));
+}
+
+TEST(TekkonTests_Basic, PinyinTrieConvertingPinyinChopsToZhuyin) {
+  // 漢語拼音。
+  {
+    PinyinTrie trie(ofHanyuPinyin);
+    const std::vector<std::string> choppedPinyin = {"b", "yue", "z", "q",
+                                                    "s", "l",   "l"};
+    const std::vector<std::string> expected = {"ㄅ",    "ㄩㄝ", "ㄓ&ㄗ", "ㄑ",
+                                               "ㄕ&ㄙ", "ㄌ",   "ㄌ"};
+    EXPECT_EQ(trie.deductChoppedPinyinToZhuyin(choppedPinyin), expected);
+  }
+  // 國音二式。
+  {
+    PinyinTrie trie(ofSecondaryPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄑ&ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    EXPECT_EQ(trie.deductChoppedPinyinToZhuyin(choppedPinyin), expected);
+  }
+  // 耶魯拼音。
+  {
+    PinyinTrie trie(ofYalePinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄑ&ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    EXPECT_EQ(trie.deductChoppedPinyinToZhuyin(choppedPinyin), expected);
+  }
+  // 華羅拼音。
+  {
+    PinyinTrie trie(ofHualuoPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄑ&ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    EXPECT_EQ(trie.deductChoppedPinyinToZhuyin(choppedPinyin), expected);
+  }
+  // 通用拼音。
+  {
+    PinyinTrie trie(ofUniversalPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    EXPECT_EQ(trie.deductChoppedPinyinToZhuyin(choppedPinyin), expected);
+  }
+  // 韋氏拼音。
+  {
+    PinyinTrie trie(ofWadeGilesPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄐ&ㄑ&ㄓ&ㄔ", "ㄈ", "ㄏ&ㄒ",
+                                               "ㄕ&ㄙ"};
+    EXPECT_EQ(trie.deductChoppedPinyinToZhuyin(choppedPinyin), expected);
+  }
+}
+
+TEST(TekkonTests_Basic, PronounceableQueryKeyGate) {
+  // pronounceableOnly 僅允許可唸的組合通過。
+  Composer composer("", ofDachen);
+  composer.receiveKeyFromPhonabet(U'ˊ');
+  EXPECT_FALSE(composer.isPronounceable());
+  EXPECT_EQ(composer.phonabetKeyForQuery(true), "");
+  EXPECT_EQ(composer.phonabetKeyForQuery(false), "ˊ");
+}
+
+TEST(TekkonTests_Basic, SemivowelNormalizationWithEncounteredVowels) {
+  // 測試「ㄩ」遇到特定韻母時會自動轉為「ㄨ」以維持正確拼法。
+  Composer composer("", ofDachen, true);
+  composer.receiveKeyFromPhonabet(U'ㄩ');
+  composer.receiveKeyFromPhonabet(U'ㄛ');
+  EXPECT_EQ(composer.value(), "ㄨㄛ");
+
+  composer.clear();
+  composer.receiveKeyFromPhonabet(U'ㄅ');
+  composer.receiveKeyFromPhonabet(U'ㄩ');
+  composer.receiveKeyFromPhonabet(U'ㄛ');
+  EXPECT_EQ(composer.getComposition(), "ㄅㄛ");
+}
+
 // =========== PINYIN TYPINNG HANDLING TESTS ===========
 
 TEST(TekkonTests_Intermediate, HanyuinyinKeyReceivingAndCompositions) {
@@ -8088,6 +8247,37 @@ TEST(TekkonTests_Utilities, MakeToneInsensitiveVariantsBasic) {
 TEST(TekkonTests_Utilities, MakeToneInsensitiveVariantsEmptyReading) {
   std::vector<std::string> expected = {"", "ˊ", "ˇ", "ˋ", "˙"};
   ASSERT_EQ(makeToneInsensitiveVariants(""), expected);
+}
+
+TEST(TekkonTests_Utilities, HasStringEdgeCases) {
+  EXPECT_TRUE(stringInclusion("ㄅㄧㄢˋ", "ㄧㄢ"));
+  EXPECT_FALSE(stringInclusion("ㄅㄧㄢˋ", "ㄧㄥ"));
+  EXPECT_TRUE(stringInclusion("aaa", "aa"));
+  EXPECT_FALSE(stringInclusion("x", "xyz"));
+  // 空目標的既有語義：僅當自身為空時為 true。
+  EXPECT_TRUE(stringInclusion("", ""));
+  EXPECT_FALSE(stringInclusion("a", ""));
+  EXPECT_FALSE(stringInclusion("", "a"));
+}
+
+TEST(TekkonTests_Utilities, SwappingEdgeCases) {
+  // replaceOccurrences 為原地改寫，故逐條複製字串後再施作。
+  auto swapped = [](std::string data, const std::string& target,
+                    const std::string& replacement) {
+    replaceOccurrences(data, target, replacement);
+    return data;
+  };
+  EXPECT_EQ(swapped("a-b-c", "-", "+"), "a+b+c");
+  EXPECT_EQ(swapped("ㄅㄧㄢ", "ㄧㄢ", "ian"), "ㄅian");
+  // 空替換內容等同於刪除目標。
+  EXPECT_EQ(swapped("a-b-c", "-", ""), "abc");
+  // 空目標的既有語義：原樣回傳自身。
+  EXPECT_EQ(swapped("abc", "", "x"), "abc");
+  // 目標自體重疊時採不重疊比對：自左向右、命中即跳過整段目標。
+  EXPECT_EQ(swapped("aaaa", "aa", "b"), "bb");
+  EXPECT_EQ(swapped("aaa", "aa", "b"), "ba");
+  // 無命中時原樣回傳。
+  EXPECT_EQ(swapped("abc", "xyz", "b"), "abc");
 }
 
 }  // namespace Tekkon

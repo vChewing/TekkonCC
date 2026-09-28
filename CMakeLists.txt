@@ -28,6 +28,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(TekkonTest
         ./GTests/TekkonTest.cc
         ./GTests/TekkonTests_Arrangements.cc
+        ./GTests/TekkonTests_Performance.cc
         ./GTests/TekkonTests_PhonabetAutoChopPredicate.cc
         ./GTests/TekkonTests_Pinyin.cc
         ./GTests/TekkonTests_SequentialValidation.cc

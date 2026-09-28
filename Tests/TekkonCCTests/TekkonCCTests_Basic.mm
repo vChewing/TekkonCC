@@ -276,4 +276,128 @@ using namespace Tekkon;
                  "ㄅㄧㄢˋ-˙ㄌㄜ-ㄊㄧㄢ");
 }
 
+- (void)test_Basic_MandarinParser {
+  // 排列家族：拼音、動態注音、靜態注音三者互斥，其聯集為全體。
+  XCTAssertEqual(allPinyinCases().size(), 6UL);
+  XCTAssertEqual(allDynamicZhuyinCases().size(), 5UL);
+  XCTAssertEqual(allStaticZhuyinCases().size(), 6UL);
+  XCTAssertEqual(allPinyinCases().size() + allDynamicZhuyinCases().size() +
+                     allStaticZhuyinCases().size(),
+                 allCases().size());
+  const std::vector<MandarinParser> staticCases = allStaticZhuyinCases();
+  for (MandarinParser parser : allCases()) {
+    XCTAssertEqual(isPinyin(parser), parser >= 100);
+    if (isPinyin(parser)) XCTAssertFalse(isDynamic(parser));
+    const bool isStatic =
+        std::count(staticCases.begin(), staticCases.end(), parser) == 1;
+    XCTAssertTrue(isPinyin(parser) || isDynamic(parser) || isStatic);
+  }
+
+  // 「拼音 -> 注音」對照表僅拼音排列有之。
+  XCTAssertTrue(mapZhuyinPinyin(ofDachen) == nullptr);
+  XCTAssertTrue(mapZhuyinPinyin(ofHanyuPinyin) != nullptr);
+  XCTAssertEqual(mapZhuyinPinyin(ofHanyuPinyin)->size(), 426UL);
+
+  // 全部可能讀音＝讀音詞幹 ＋ 其與各聲調之組合；聲調之表記隨排列家族而異。
+  const std::set<std::string> hanyuReadings =
+      allPossibleReadings(ofHanyuPinyin);
+  XCTAssertEqual(hanyuReadings.count("bian"), 1UL);
+  XCTAssertEqual(hanyuReadings.count("bian1"), 1UL);
+  XCTAssertEqual(hanyuReadings.count("bian5"), 1UL);
+  XCTAssertEqual(hanyuReadings.count("bianˊ"), 0UL);
+  const std::set<std::string> dachenReadings = allPossibleReadings(ofDachen);
+  XCTAssertEqual(dachenReadings.count("ㄅㄧㄢ"), 1UL);
+  XCTAssertEqual(dachenReadings.count("ㄅㄧㄢˋ"), 1UL);
+  XCTAssertEqual(dachenReadings.count("ㄅㄧㄢ "), 1UL);
+
+  // 逐排列送鍵（含非按鍵之輸入），再清空；每一條排列分支皆須走過且不得崩潰。
+  Composer composer("", ofDachen);
+  XCTAssertTrue(composer.isEmpty());
+  XCTAssertEqual(composer.count(true), 0);
+  XCTAssertEqual(composer.count(false), 0);
+  for (MandarinParser parser : allCases()) {
+    composer.ensureParser(parser);
+    composer.receiveKey("q");
+    composer.receiveKey("幹");
+    composer.receiveKey("3");
+    composer.receiveKey("1");
+    composer.clear();
+    XCTAssertTrue(composer.isEmpty());
+  }
+}
+
+- (void)test_Basic_ChoppingRawComplex {
+  PinyinTrie trieZhuyin(ofDachen);
+  PinyinTrie triePinyin(ofHanyuPinyin);
+  {
+    // 注音排列：以讀音表逐段做最長前綴比對。
+    XCTAssertTrue(trieZhuyin.chop("ㄅㄩㄝㄓㄨㄑㄕㄢㄌㄧㄌㄧㄤ") ==
+                  (std::vector<std::string>{"ㄅ", "ㄩㄝ", "ㄓㄨ", "ㄑ", "ㄕㄢ",
+                                            "ㄌㄧ", "ㄌㄧㄤ"}));
+    // 漢語拼音：沿 trie 貪婪下探。
+    XCTAssertTrue(
+        triePinyin.chop("byuezqsll") ==
+        (std::vector<std::string>{"b", "yue", "z", "q", "s", "l", "l"}));
+    XCTAssertTrue(trieZhuyin.chop("ㄕㄐㄧㄉㄓ") ==
+                  (std::vector<std::string>{"ㄕ", "ㄐㄧ", "ㄉ", "ㄓ"}));
+  }
+  {
+    const std::vector<std::string> choppedPinyin = triePinyin.chop("yod");
+    XCTAssertTrue(choppedPinyin == (std::vector<std::string>{"yo", "d"}));
+    // 切分結果再展開為注音：單一拼音切片可以對應多個注音。
+    const std::vector<std::string> deducted =
+        triePinyin.deductChoppedPinyinToZhuyin(choppedPinyin);
+    XCTAssertFalse(deducted.empty());
+    XCTAssertEqual(deducted.front(), "ㄧㄛ&ㄧㄡ&ㄩㄥ");
+  }
+}
+
+- (void)test_Basic_PinyinTrieConvertingPinyinChopsToZhuyin {
+  // 漢語拼音。
+  {
+    PinyinTrie trie(ofHanyuPinyin);
+    const std::vector<std::string> choppedPinyin = {"b", "yue", "z", "q",
+                                                    "s", "l",   "l"};
+    const std::vector<std::string> expected = {"ㄅ",    "ㄩㄝ", "ㄓ&ㄗ", "ㄑ",
+                                               "ㄕ&ㄙ", "ㄌ",   "ㄌ"};
+    XCTAssertTrue(trie.deductChoppedPinyinToZhuyin(choppedPinyin) == expected);
+  }
+  // 國音二式。
+  {
+    PinyinTrie trie(ofSecondaryPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄑ&ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    XCTAssertTrue(trie.deductChoppedPinyinToZhuyin(choppedPinyin) == expected);
+  }
+  // 耶魯拼音。
+  {
+    PinyinTrie trie(ofYalePinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄑ&ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    XCTAssertTrue(trie.deductChoppedPinyinToZhuyin(choppedPinyin) == expected);
+  }
+  // 華羅拼音。
+  {
+    PinyinTrie trie(ofHualuoPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄑ&ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    XCTAssertTrue(trie.deductChoppedPinyinToZhuyin(choppedPinyin) == expected);
+  }
+  // 通用拼音。
+  {
+    PinyinTrie trie(ofUniversalPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄔ", "ㄈ", "ㄏ", "ㄒ&ㄕ&ㄙ"};
+    XCTAssertTrue(trie.deductChoppedPinyinToZhuyin(choppedPinyin) == expected);
+  }
+  // 韋氏拼音。
+  {
+    PinyinTrie trie(ofWadeGilesPinyin);
+    const std::vector<std::string> choppedPinyin = {"ch", "f", "h", "s"};
+    const std::vector<std::string> expected = {"ㄐ&ㄑ&ㄓ&ㄔ", "ㄈ", "ㄏ&ㄒ",
+                                               "ㄕ&ㄙ"};
+    XCTAssertTrue(trie.deductChoppedPinyinToZhuyin(choppedPinyin) == expected);
+  }
+}
+
 @end

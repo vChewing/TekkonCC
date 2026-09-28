@@ -66,4 +66,35 @@ using namespace Tekkon;
   XCTAssertTrue(makeToneInsensitiveVariants("") == expected);
 }
 
+- (void)test_Utilities_HasStringEdgeCases {
+  XCTAssertTrue(stringInclusion("ㄅㄧㄢˋ", "ㄧㄢ"));
+  XCTAssertFalse(stringInclusion("ㄅㄧㄢˋ", "ㄧㄥ"));
+  XCTAssertTrue(stringInclusion("aaa", "aa"));
+  XCTAssertFalse(stringInclusion("x", "xyz"));
+  // 空目標的既有語義：僅當自身為空時為 true。
+  XCTAssertTrue(stringInclusion("", ""));
+  XCTAssertFalse(stringInclusion("a", ""));
+  XCTAssertFalse(stringInclusion("", "a"));
+}
+
+- (void)test_Utilities_SwappingEdgeCases {
+  // replaceOccurrences 為原地改寫，故逐條複製字串後再施作。
+  auto swapped = [](std::string data, const std::string& target,
+                    const std::string& replacement) {
+    replaceOccurrences(data, target, replacement);
+    return data;
+  };
+  XCTAssertEqual(swapped("a-b-c", "-", "+"), "a+b+c");
+  XCTAssertEqual(swapped("ㄅㄧㄢ", "ㄧㄢ", "ian"), "ㄅian");
+  // 空替換內容等同於刪除目標。
+  XCTAssertEqual(swapped("a-b-c", "-", ""), "abc");
+  // 空目標的既有語義：原樣回傳自身。
+  XCTAssertEqual(swapped("abc", "", "x"), "abc");
+  // 目標自體重疊時採不重疊比對：自左向右、命中即跳過整段目標。
+  XCTAssertEqual(swapped("aaaa", "aa", "b"), "bb");
+  XCTAssertEqual(swapped("aaa", "aa", "b"), "ba");
+  // 無命中時原樣回傳。
+  XCTAssertEqual(swapped("abc", "xyz", "b"), "abc");
+}
+
 @end
