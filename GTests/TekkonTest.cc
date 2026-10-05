@@ -221,7 +221,7 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   ASSERT_EQ(composer.getComposition(), "ㄩㄝ");
 
   // Testing tool functions
-  ASSERT_EQ(Tekkon::restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  ASSERT_EQ(Tekkon::restoreFirstToneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   ASSERT_EQ(Tekkon::cnvPhonaToTextbookStyle("ㄓㄜ˙"), "˙ㄓㄜ");
   ASSERT_EQ(Tekkon::cnvPhonaToHanyuPinyin("ㄍㄢˋ"), "gan4");
   ASSERT_EQ(Tekkon::cnvHanyuPinyinToTextBookStyle("起(qi3)居(ju1)"),
@@ -8212,12 +8212,12 @@ TEST(TekkonTests_Advanced, AlvinLiuKeys) {
   ASSERT_TRUE(container.empty());
 }
 
-TEST(TekkonTests_Utilities, RestoreToneOneEdgeCases) {
+TEST(TekkonTests_Utilities, RestoreFirstToneEdgeCases) {
   // 空字串防呆。
-  ASSERT_EQ(restoreToneOneInPhona(""), "");
-  ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
-  ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");
-  ASSERT_EQ(restoreToneOneInPhona("ㄉㄧㄠ˙"), "ㄉㄧㄠ˙");
+  ASSERT_EQ(restoreFirstToneInPhona(""), "");
+  ASSERT_EQ(restoreFirstToneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  ASSERT_EQ(restoreFirstToneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");
+  ASSERT_EQ(restoreFirstToneInPhona("ㄉㄧㄠ˙"), "ㄉㄧㄠ˙");
 }
 
 TEST(TekkonTests_Utilities, PhonaToPinyinFullTableSweep) {

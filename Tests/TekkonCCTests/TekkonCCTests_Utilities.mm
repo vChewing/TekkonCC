@@ -17,12 +17,12 @@ using namespace Tekkon;
 
 @implementation TekkonCCTests_Utilities
 
-- (void)test_Utilities_RestoreToneOneEdgeCases {
+- (void)test_Utilities_RestoreFirstToneEdgeCases {
   // 空字串防呆。
-  XCTAssertEqual(restoreToneOneInPhona(""), "");
-  XCTAssertEqual(restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
-  XCTAssertEqual(restoreToneOneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");
-  XCTAssertEqual(restoreToneOneInPhona("ㄉㄧㄠ˙"), "ㄉㄧㄠ˙");
+  XCTAssertEqual(restoreFirstToneInPhona(""), "");
+  XCTAssertEqual(restoreFirstToneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  XCTAssertEqual(restoreFirstToneInPhona("ㄉㄧㄠˋ"), "ㄉㄧㄠˋ");
+  XCTAssertEqual(restoreFirstToneInPhona("ㄉㄧㄠ˙"), "ㄉㄧㄠ˙");
 }
 
 - (void)test_Utilities_PhonaToPinyinFullTableSweep {

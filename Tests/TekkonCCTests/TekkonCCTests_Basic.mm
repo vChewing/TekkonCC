@@ -263,7 +263,7 @@ using namespace Tekkon;
   XCTAssertEqual(composer.getComposition(), "ㄩㄝ");
 
   // Testing tool functions
-  XCTAssertEqual(Tekkon::restoreToneOneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
+  XCTAssertEqual(Tekkon::restoreFirstToneInPhona("ㄉㄧㄠ"), "ㄉㄧㄠ1");
   XCTAssertEqual(Tekkon::cnvPhonaToTextbookStyle("ㄓㄜ˙"), "˙ㄓㄜ");
   XCTAssertEqual(Tekkon::cnvPhonaToHanyuPinyin("ㄍㄢˋ"), "gan4");
   XCTAssertEqual(Tekkon::cnvHanyuPinyinToTextBookStyle("起(qi3)居(ju1)"),

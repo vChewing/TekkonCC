@@ -1568,7 +1568,7 @@ inline static std::string cnvPhonaToTextbookStyle(std::string target) {
 /// 該函式用來恢復注音當中的陰平聲調，恢復之後會以「1」表示陰平。
 /// @param target 要拿來做轉換處理的讀音。
 /// @returns 經過轉換處理的讀音鏈。
-inline static std::string restoreToneOneInPhona(std::string target) {
+inline static std::string restoreFirstToneInPhona(std::string target) {
   // 空字串防呆。
   if (target.empty()) return target;
   std::string result = target;
@@ -1618,10 +1618,10 @@ inline static const std::vector<std::string> _sortedArayuruIntonationKeys = [] {
 
 /// 該函式用來將漢語拼音轉為注音。
 /// @param targetJoined 要轉換的漢語拼音內容，要求必須帶有 12345 數字標調。
-/// @param newToneOne 對陰平指定新的標記。預設情況下該標記為空字串。
+/// @param newFirstTone 對陰平指定新的標記。預設情況下該標記為空字串。
 /// @returns 轉換結果。
 inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
-                                                std::string newToneOne = "") {
+                                                std::string newFirstTone = "") {
   // 允許的字元：英數 (A-Za-z0-9)、空白、Tab、連字號(-)。
   // 如果含底線或包含任何不在允許列表中的字元，則放棄轉換。
   // 單趟掃描、遇到首個不允許字元即短路，不使用 Regex。
@@ -1639,7 +1639,7 @@ inline static std::string cnvHanyuPinyinToPhona(std::string targetJoined = "",
   }
   for (const auto& i : _sortedArayuruIntonationKeys) {
     replaceOccurrences(strResult, i,
-                       i == "1" ? newToneOne : mapArayuruPinyinIntonation[i]);
+                       i == "1" ? newFirstTone : mapArayuruPinyinIntonation[i]);
   }
   return strResult;
 }
