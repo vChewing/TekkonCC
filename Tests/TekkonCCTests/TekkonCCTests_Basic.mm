@@ -160,7 +160,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   XCTAssertEqual(composer.getComposition(), "ㄉㄧㄠ");

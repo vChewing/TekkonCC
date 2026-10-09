@@ -1496,7 +1496,7 @@ inline static std::vector<std::string> makeToneInsensitiveVariants(
   return variants;
 }
 
-/// 注音轉拼音，要求陰平必須是空格。
+/// 注音轉拼音，要求陰平必須是空白字元。
 ///
 /// @param targetJoined 傳入的 String 對象物件。
 inline static std::string cnvPhonaToHanyuPinyin(std::string targetJoined = "") {
@@ -1783,7 +1783,7 @@ inline static const std::map<std::string, std::string>* mapZhuyinPinyin(
 /// 該排列之全部可能讀音：讀音詞幹，暨其與各聲調之組合。
 ///
 /// 拼音排列者為拼音串（聲調以 `1`-`5` 表記），注音排列者為注音讀音
-/// （聲調以 `ˊˇˋ˙` 與空格表記）。傳入非拼音排列時，詞幹取自
+/// （聲調以 `ˊˇˋ˙` 與空白字元表記）。傳入非拼音排列時，詞幹取自
 /// `mapHanyuPinyin` 之注音值。
 inline static std::set<std::string> allPossibleReadings(MandarinParser parser) {
   const std::string intonations = isPinyin(parser) ? " 12345" : " ˊˇˋ˙";
@@ -1956,8 +1956,8 @@ class Composer {
   bool _needsRomajiUpdate = true;
 
   /// 內容值，會直接按照正確的順序拼裝自己的聲介韻調內容、再回傳。
-  /// 注意：直接取這個參數的內容的話，陰平聲調會成為一個空格。
-  /// 如果是要取不帶空格的注音的話，請使用「.getComposition()」而非「.Value」。
+  /// 注意：直接取這個參數的內容的話，陰平聲調會成為一個空白字元。
+  /// 如果是要取不帶空白字元的注音的話，請使用「.getComposition()」而非「.Value」。
   std::string value() {
     return consonant.value() + semivowel.value() + vowel.value() +
            intonation.value();
@@ -2365,7 +2365,7 @@ class Composer {
     return false;
   }
 
-  /// 處理一連串的按鍵輸入、且返回被處理之後的注音（陰平為空格）。
+  /// 處理一連串的按鍵輸入、且返回被處理之後的注音（陰平為空白字元）。
   ///
   /// @param givenSequence 傳入的 String 內容，用以處理一整串擊鍵輸入。
   /// @param isRomaji 若輸入的字串是基於西文字母的各種拼音的話，請啟用此選項。
@@ -2424,7 +2424,7 @@ class Composer {
       } else {
         // 刪除拼音字元後，必須以縮短後的緩衝重新推導聲介韻槽位；否則 phonabet
         // 欄位殘留已刪除的讀音（isPronounceable
-        // 誤判為真），後續的聲調鍵／空格鍵
+        // 誤判為真），後續的聲調鍵／空白鍵
         // 會把已刪除的讀音重新組回（receiveSequence 會清空 romajiBuffer，故
         // 事後須復原）。
         std::string shortened = romajiBuffer.substr(0, romajiBuffer.size() - 1);

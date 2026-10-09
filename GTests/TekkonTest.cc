@@ -118,7 +118,7 @@ TEST(TekkonTests_Basic, PhonabetKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空格
+            "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   ASSERT_EQ(composer.getComposition(), "ㄉㄧㄠ");
@@ -429,7 +429,7 @@ TEST(TekkonTests_Intermediate, HanyuinyinKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空格
+            "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition;
   ASSERT_EQ(composer.getComposition(), "ㄉㄧㄠ");
@@ -481,7 +481,7 @@ TEST(TekkonTests_Intermediate, SecondaryPinyinKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition;
   ASSERT_EQ(composer.getComposition(), "ㄑㄩㄥ");
@@ -533,7 +533,7 @@ TEST(TekkonTests_Intermediate, YalePinyinKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition;
   ASSERT_EQ(composer.getComposition(), "ㄑㄩㄥ");
@@ -585,7 +585,7 @@ TEST(TekkonTests_Intermediate, HualuoPinyinKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   ASSERT_EQ(composer.getComposition(), "ㄑㄩㄥ");
@@ -636,7 +636,7 @@ TEST(TekkonTests_Intermediate, UniversalPinyinKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   ASSERT_EQ(composer.getComposition(), "ㄑㄩㄥ");
@@ -686,7 +686,7 @@ TEST(TekkonTests_Intermediate, WadeGilesPinyinKeyReceivingAndCompositions) {
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.value(),
-            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+            "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   ASSERT_EQ(composer.getComposition(), "ㄑㄩㄥ");

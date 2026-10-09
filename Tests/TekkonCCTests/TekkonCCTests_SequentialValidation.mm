@@ -38,7 +38,7 @@ std::vector<std::string> splitByWhitespace(const std::string& line) {
   return tokens;
 }
 
-/// 將底線還原為空格（語料表以底線代表空白）。
+/// 將底線還原為空白字元（語料表以底線代表空白）。
 std::string replaceUnderscores(const std::string& str) {
   std::string result = str;
   std::replace(result.begin(), result.end(), '_', ' ');

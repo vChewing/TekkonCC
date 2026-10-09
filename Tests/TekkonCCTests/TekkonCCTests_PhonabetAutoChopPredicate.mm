@@ -20,7 +20,7 @@
 // `Tests/TestAssets_Tekkon/TekkonTestData.hh` 就地解析——故語料仍為單一正本。
 //
 // 輸入域：候選鍵與語料單元格皆須落在鍵面字元域內
-// （僅 ASCII 字母與數字）。素材檔內之反引號（`` `NULL``）與尾端空格（源自
+// （僅 ASCII 字母與數字）。素材檔內之反引號（`` `NULL``）與尾端空白字元（源自
 // `__`）
 // 皆為「本排列無此鍵」之標記，**非按鍵**；先前之版本把兩者一併當成候選鍵，
 // 遂使反推鍵表把反引號登記成某注音符號之按鍵、由合法讀音之前綴生成出**不可鍵入**
@@ -107,7 +107,7 @@ NSString* nsString(const std::string& text) {
   return [NSString stringWithUTF8String:text.c_str()];
 }
 
-/// 將底線還原為空格（語料表以底線代表空白＝陰平鍵）。
+/// 將底線還原為空白字元（語料表以底線代表空白＝陰平鍵）。
 std::string replaceUnderscores(const std::string& str) {
   std::string result = str;
   std::replace(result.begin(), result.end(), '_', ' ');
@@ -155,7 +155,7 @@ char32_t codepointToChar32(const std::string& codepoint) {
 /// 鍵面字元之地面真值（靜態注音排列之按鍵域）：僅 ASCII 字母與數字。
 ///
 /// 實查自素材檔之 1485 列 × 5 動態排列：其鍵面字元僅 `0-9` 與
-/// `a-z`。反引號與空格
+/// `a-z`。反引號與空白字元
 /// **不在其列**——兩者在素材檔內只作「無此鍵」之標記。此函式即輸入域不變式。
 bool isKeyCharacter(const std::string& codepoint) {
   if (codepoint.size() != 1) return false;
@@ -189,7 +189,7 @@ std::string shownKey(const std::string& key) {
 
 /// 單一按鍵之候選集（靜態注音排列之鍵面字元：數字 ＋ 小寫字母）。
 ///
-/// **不得**再收反引號與空格：兩者非任何出貨排列之按鍵，見檔頭之說明。
+/// **不得**再收反引號與空白字元：兩者非任何出貨排列之按鍵，見檔頭之說明。
 std::vector<std::string> candidateKeys() {
   std::vector<std::string> result;
   for (const std::string& codepoint :
@@ -219,7 +219,7 @@ AutoChopCorpus autoChopCorpus() {
     if (tokens.size() != 6) continue;
     // 校驗閘：任何單元格若含鍵面字元以外之字元即整列剔除。實查素材檔之此類單元格只有
     // 兩種：① 以反引號起始者（`` `NULL``、`` `vezf``…，標記「本排列無此鍵」）；
-    // ② 尾端帶一空格者（`m `、`too `…，源自素材檔之 `__` ⇒ 空
+    // ② 尾端帶一空白字元者（`m `、`too `…，源自素材檔之 `__` ⇒ 空
     // cell）。**兩者皆為 「不適用」之標記，非按鍵。**
     const bool allCellsAreKeys = std::all_of(
         tokens.begin() + 1, tokens.end(),
@@ -355,7 +355,7 @@ std::vector<std::string> typeWithProductionPredicate(const std::string& keys,
   for (const AutoChopLayout& layout : staticLayouts()) {
     const std::map<char32_t, std::string> keyMap = staticKeyMap(layout.parser);
     // 輸入域不變式：反推所得之按鍵一律須為鍵面字元。**此行即迴歸釘**——先前之
-    // 候選鍵含反引號與空格，反推遂把它們登記成某注音符號之按鍵，而由合法讀音之前綴
+    // 候選鍵含反引號與空白字元，反推遂把它們登記成某注音符號之按鍵，而由合法讀音之前綴
     // 生成出**不可鍵入**之鍵序。
     for (const auto& pair : keyMap) {
       XCTAssertTrue(isKeyCharacter(pair.second),
@@ -438,7 +438,7 @@ std::vector<std::string> typeWithProductionPredicate(const std::string& keys,
         Composer probe = composer;
         probe.receiveKey(key);
         const std::string postContent = probe.getComposition();
-        // 於**當前狀態**下寫入聲調槽者（聲調鍵／空格）由既有管線固化，不屬本案。
+        // 於**當前狀態**下寫入聲調槽者（聲調鍵／空白鍵）由既有管線固化，不屬本案。
         if (probe.intonation.value() != composer.intonation.value()) continue;
         const bool greedy =
             index.isPrefix(postContent) &&

@@ -37,14 +37,14 @@ std::set<std::string> derivedPrefixes(
   return result;
 }
 
-/// 將底線還原為空格（語料表以底線代表空白）。
+/// 將底線還原為空白字元（語料表以底線代表空白）。
 std::string replaceUnderscores(const std::string& str) {
   std::string result = str;
   std::replace(result.begin(), result.end(), '_', ' ');
   return result;
 }
 
-/// 語料表之全部無調詞幹（底線＝空格＝陰平，須先還原再剝調）。
+/// 語料表之全部無調詞幹（底線＝空白字元＝陰平，須先還原再剝調）。
 std::set<std::string> testTableStems() {
   std::set<std::string> stems;
   std::istringstream stream(TekkonTestData::testTable4DynamicLayouts);

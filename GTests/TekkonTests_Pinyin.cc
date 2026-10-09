@@ -206,7 +206,7 @@ TEST(TekkonTests_Pinyin, BackSpaceResyncsPhonabetSlots) {
   ASSERT_TRUE(composer.isEmpty());
   ASSERT_FALSE(composer.isPronounceable());
 
-  // 清空後收下陰平空格鍵：不應把已刪除的「ma」重新組回。
+  // 清空後收下陰平空白鍵：不應把已刪除的「ma」重新組回。
   composer.receiveKey(" ");  // 陰平
   ASSERT_EQ(composer.intonation.value(), " ");
   ASSERT_EQ(composer.getComposition(), "");

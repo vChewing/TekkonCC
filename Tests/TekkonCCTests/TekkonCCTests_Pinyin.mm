@@ -41,7 +41,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄉㄧㄠ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition;
   XCTAssertEqual(composer.getComposition(), "ㄉㄧㄠ");
@@ -93,7 +93,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition;
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
@@ -145,7 +145,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition;
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
@@ -197,7 +197,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
@@ -248,7 +248,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
@@ -298,7 +298,7 @@ using namespace Tekkon;
   composer.doBackSpace();
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.value(),
-                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空格
+                 "ㄑㄩㄥ ");  // 這裡回傳的結果的陰平是空白字元
 
   // Test Getting Displayed Composition
   XCTAssertEqual(composer.getComposition(), "ㄑㄩㄥ");
@@ -527,7 +527,7 @@ using namespace Tekkon;
   XCTAssertTrue(composer.isEmpty());
   XCTAssertFalse(composer.isPronounceable());
 
-  // 清空後收下陰平空格鍵：不應把已刪除的「ma」重新組回。
+  // 清空後收下陰平空白鍵：不應把已刪除的「ma」重新組回。
   composer.receiveKey(" ");  // 陰平
   XCTAssertEqual(composer.intonation.value(), " ");
   XCTAssertEqual(composer.getComposition(), "");
